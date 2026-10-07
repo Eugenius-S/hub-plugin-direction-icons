@@ -1,0 +1,18 @@
+/* «Иконки направлений»: кнопка в шапке направления и выбор знака. Токены страницы, своих цветов нет. */
+.di-mark { display: none; }
+.di-slot { position: relative; display: inline-flex; flex: none; }
+.di-slot[hidden] { display: none; }
+.di-btn { display: inline-flex; align-items: center; justify-content: center; width: 30px; height: 30px; padding: 0;
+  border: 1px solid transparent; border-radius: var(--radius); background: transparent; color: var(--foreground);
+  font: inherit; font-size: calc(18px * var(--ui-scale, 1)); line-height: 1; cursor: pointer; }
+.di-btn:hover, .di-btn[aria-expanded="true"] { background: var(--muted); border-color: var(--border); }
+.di-pop { position: absolute; top: calc(100% + 6px); left: 0; z-index: var(--z-popover, 60); width: 336px; max-height: 70vh;
+  overflow: auto; padding: var(--space-3); border: 1px solid var(--border); border-radius: var(--radius-lg);
+  background: var(--card); color: var(--foreground); box-shadow: 0 12px 32px rgb(0 0 0 / 18%); display: grid; gap: var(--space-2); }
+.di-title { color: var(--muted-foreground); font-size: var(--text-xs); }
+.di-grid { display: grid; grid-template-columns: repeat(8, 1fr); gap: 2px; }
+.di-opt { display: inline-flex; align-items: center; justify-content: center; aspect-ratio: 1; padding: 0; border: 1px solid transparent;
+  border-radius: var(--radius); background: transparent; font: inherit; font-size: calc(18px * var(--ui-scale, 1)); line-height: 1; cursor: pointer; }
+.di-opt:hover { background: var(--muted); }
+.di-opt[aria-pressed="true"] { border-color: var(--primary); background: color-mix(in srgb, var(--primary) 10%, var(--card)); }
+.di-foot { display: flex; gap: var(--space-2); padding-top: var(--space-2); border-top: 1px solid var(--border); }
