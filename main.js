@@ -4,7 +4,7 @@
 //
 // Строку списка и шапку хаб собирает заново на каждом снимке, а root места живёт между снимками: поэтому знак ставим
 // после сборки (requestAnimationFrame — до отрисовки, мерцания нет): в строке — вместо знака у имени, в шапке — кнопка
-// переезжает сразу за статус.
+// переезжает перед названием.
 const KEY = "hub.directionIcons";
 const DEFAULT = "🧭";
 let hub = null, groups = null, openFor = null;
@@ -108,9 +108,9 @@ function renderHead(root, snap, { session }) {
   btn.title = "Иконка направления — выбрать";
   btn.setAttribute("aria-expanded", String(openFor === name));
   sync(root);
-  requestAnimationFrame(() => {   // рядом с именем и статусом, а не у правого края
-    const pill = root.parentElement?.querySelector(":scope > .pill");
-    if (pill && pill.nextElementSibling !== root) pill.after(root);
+  requestAnimationFrame(() => {   // слева, перед названием (владелец 07.10), а не у правого края
+    const title = root.parentElement?.querySelector(":scope > h2");
+    if (title && title.previousElementSibling !== root) title.before(root);
   });
 }
 

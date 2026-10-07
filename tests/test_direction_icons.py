@@ -44,6 +44,13 @@ class Source(unittest.TestCase):
         self.assertNotIn("innerHTML", js)
         self.assertNotIn("eval(", js)
 
+    def test_the_button_stands_before_the_title(self):
+        # владелец 07.10: иконка слева, перед названием направления (было — после статуса)
+        js = read("main.js")
+        self.assertIn('":scope > h2"', js)
+        self.assertIn("title.before(root)", js)
+        self.assertNotIn("pill.after(root)", js)
+
     def test_javascript_parses(self):
         node = shutil.which("node")
         if not node:
