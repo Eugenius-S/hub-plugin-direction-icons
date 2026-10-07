@@ -16,6 +16,8 @@ function setIcon(name, value) {
   if (value && value !== DEFAULT) all[name] = value; else delete all[name];   // компас — по умолчанию, отдельно не хранится
   try { localStorage.setItem(KEY, JSON.stringify(all)); } catch { /* нет хранилища */ }
   openFor = null;
+  // перерисовка страницы список обновляет, шапку открытого направления — нет: кнопку обновляем сами
+  for (const r of document.querySelectorAll(".di-slot")) if (r.dataset.name === name) r.querySelector(".di-btn").textContent = iconOf(name) || DEFAULT;
   hub.redraw ? hub.redraw() : dispatchEvent(new Event("hub-redraw"));
 }
 // направление — как его видит хаб: не специалист и не хаб, ведёт бэклог или есть в списке направлений
