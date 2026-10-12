@@ -105,6 +105,13 @@ class Source(unittest.TestCase):
         hop = int(re.search(r"const HOP = (\d+)", js).group(1))
         self.assertIn(f"animation: di-hop {hop}ms infinite", css)  # фаза из часов страницы — та же длительность
 
+    def test_any_unread_sign_hops_not_only_directions(self):
+        # владелец 12.10: специалист закончил задачу — его знак тоже прыгает (прыгали только направления)
+        js = read("main.js")
+        on = re.search(r"const on = (.+);", js).group(1)
+        self.assertNotIn('kind === "direction"', on)
+        self.assertIn('classList.contains("unread")', on)
+
     def test_javascript_parses(self):
         node = shutil.which("node")
         if not node:

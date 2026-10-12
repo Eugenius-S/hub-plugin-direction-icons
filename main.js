@@ -6,9 +6,9 @@
 // после сборки (requestAnimationFrame — до отрисовки, мерцания нет): в строке — вместо знака у имени, в шапке — кнопка
 // переезжает перед названием.
 //
-// Итог хода пришёл, а владелец его ещё не открыл (строка «unread») — знак направления плавно подпрыгивает на 5 px, как
-// значок в доке Mac (владелец 12.10). Строку пересобирают на каждом снимке — фазу прыжка берём от часов страницы, чтобы
-// новый узел продолжал движение, а не начинал заново.
+// Итог хода пришёл, а владелец его ещё не открыл (строка «unread») — знак сессии (направления, специалиста, исполнителя)
+// плавно подпрыгивает на 5 px, как значок в доке Mac (владелец 12.10). Строку пересобирают на каждом снимке — фазу
+// прыжка берём от часов страницы, чтобы новый узел продолжал движение, а не начинал заново.
 //
 // Стиль (владелец 12.10) — на все знаки списка: специалисты, направления, исполнители. Эмодзи или символ системного
 // шрифта — на Mac SF Symbols (шрифт SF Pro), на Windows Segoe Fluent Icons (MDL2 на Windows 10); шрифта нет — стиль
@@ -172,7 +172,7 @@ function paintRow(root) {
     paintIcon(av, name, kind, root.dataset.base);
   }
   // прыгает, пока итог не прочитан: метку «unread» строке ставит хаб (у открытой сейчас сессии её нет)
-  const on = kind === "direction" && row.classList.contains("unread") && settings().hop;
+  const on = row.classList.contains("unread") && settings().hop;
   av.classList.toggle("di-hop", on);
   av.style.animationDelay = on ? `-${Math.round(performance.now() % HOP)}ms` : "";
 }
@@ -299,8 +299,8 @@ function paintSettings(root) {
   box.checked = s.hop;
   box.addEventListener("change", () => setSettings({ hop: box.checked }));
   const txt = hub.el("span");
-  txt.append(document.createTextNode("Иконка направления прыгает, пока итог не прочитан"),
-    hub.el("small", null, "Как значок в доке Mac: направление закончило ход, а вы его ещё не открыли"));
+  txt.append(document.createTextNode("Иконка прыгает, пока итог не прочитан"),
+    hub.el("small", null, "Как значок в доке Mac: направление или специалист закончили ход, а вы его ещё не открыли"));
   hop.append(box, txt);
   rows.push(hub.el("div", "di-set-title", "Прыжок"), hop);
   root.classList.add("di-set");
