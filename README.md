@@ -33,3 +33,5 @@
 `python3 -m unittest discover -s tests` — стандартная библиотека, без хаба и браузера.
 
 Код — MIT.
+
+Иконка — [3D Fluency](https://icons8.com/icons/3d-fluency) от Icons8.
