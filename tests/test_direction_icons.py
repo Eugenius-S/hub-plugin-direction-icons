@@ -35,6 +35,29 @@ class Emoji(unittest.TestCase):
         self.assertTrue(all(g["title"] and g["icons"] for g in groups))
 
 
+class Symbols(unittest.TestCase):
+    def test_set_has_codes_for_mac_and_windows(self):
+        # владелец 12.10: стиль — эмодзи или символьный шрифт (Mac — SF Symbols, Windows — Segoe Fluent Icons)
+        groups = json.loads(read("symbols.json"))
+        icons = [i for g in groups for i in g["icons"]]
+        self.assertTrue(all(g["title"] and g["icons"] for g in groups))
+        self.assertEqual(len({i["n"] for i in icons}), len(icons))
+        for font, lo, hi, least in (("sf", 0x100000, 0x10FFFD, 60), ("win", 0xE000, 0xF8FF, 40)):
+            codes = [int(i[font], 16) for i in icons if font in i]
+            self.assertGreaterEqual(len(codes), least, font)
+            self.assertEqual(len(codes), len(set(codes)), font)   # без двойников в сетке
+            self.assertTrue(all(lo <= c <= hi for c in codes), font)   # личная зона Unicode шрифта
+        self.assertTrue(all("sf" in i or "win" in i for i in icons))
+
+    def test_symbol_tab_is_off_without_the_font(self):
+        js = read("main.js")
+        self.assertIn('"Segoe Fluent Icons"', js)
+        self.assertIn('"SF Pro"', js)
+        self.assertRegex(js, r'id === "sym" && !symbolFont\(\)\) \{\s*t\.disabled = true')
+        self.assertIn("COLORS[h % COLORS.length]", js)   # «случайный» — постоянный для направления, не мигает
+        self.assertIn('load("symbols.json")', js)
+
+
 class Source(unittest.TestCase):
     def test_places_and_storage(self):
         js = read("main.js")

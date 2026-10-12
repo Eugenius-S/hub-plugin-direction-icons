@@ -1,0 +1,591 @@
+[
+ {
+  "title": "Работа",
+  "icons": [
+   {
+    "n": "folder",
+    "sf": "100215",
+    "win": "e8b7"
+   },
+   {
+    "n": "briefcase",
+    "sf": "10039c",
+    "win": "e821"
+   },
+   {
+    "n": "doc.text",
+    "sf": "10023f",
+    "win": "e8a5"
+   },
+   {
+    "n": "tray.full",
+    "sf": "10022b"
+   },
+   {
+    "n": "archivebox",
+    "sf": "10022d",
+    "win": "e7b8"
+   },
+   {
+    "n": "calendar",
+    "sf": "100249",
+    "win": "e787"
+   },
+   {
+    "n": "clock",
+    "sf": "10042b",
+    "win": "e917"
+   },
+   {
+    "n": "checklist",
+    "sf": "100dfe",
+    "win": "e9d5"
+   },
+   {
+    "n": "list.bullet",
+    "sf": "1002f2",
+    "win": "e8fd"
+   },
+   {
+    "n": "pin",
+    "sf": "1003a6",
+    "win": "e718"
+   },
+   {
+    "n": "flag",
+    "sf": "1002c9",
+    "win": "e7c1"
+   },
+   {
+    "n": "bookmark",
+    "sf": "10025e",
+    "win": "e8a4"
+   },
+   {
+    "n": "tag",
+    "sf": "1002e1",
+    "win": "e8ec"
+   },
+   {
+    "n": "paperclip",
+    "sf": "100262",
+    "win": "e723"
+   },
+   {
+    "n": "link",
+    "sf": "100263",
+    "win": "e71b"
+   },
+   {
+    "n": "bell",
+    "sf": "1002d9",
+    "win": "ea8f"
+   },
+   {
+    "n": "envelope",
+    "sf": "100355",
+    "win": "e715"
+   },
+   {
+    "n": "paperplane",
+    "sf": "10021f",
+    "win": "e724"
+   }
+  ]
+ },
+ {
+  "title": "Создание",
+  "icons": [
+   {
+    "n": "paintbrush",
+    "sf": "100391",
+    "win": "ead5"
+   },
+   {
+    "n": "paintbrush.pointed",
+    "sf": "1008f6"
+   },
+   {
+    "n": "paintpalette",
+    "sf": "100765",
+    "win": "e790"
+   },
+   {
+    "n": "pencil",
+    "sf": "10020a",
+    "win": "e70f"
+   },
+   {
+    "n": "pencil.and.ruler",
+    "sf": "101586",
+    "win": "eb3c"
+   },
+   {
+    "n": "scribble.variable",
+    "sf": "100911"
+   },
+   {
+    "n": "wand.and.stars",
+    "sf": "10070d"
+   },
+   {
+    "n": "sparkles",
+    "sf": "1001bf",
+    "win": "f1ba"
+   },
+   {
+    "n": "photo",
+    "sf": "1003c5",
+    "win": "e91b"
+   },
+   {
+    "n": "camera",
+    "sf": "10031e",
+    "win": "e722"
+   },
+   {
+    "n": "film",
+    "sf": "1003b6",
+    "win": "e714"
+   },
+   {
+    "n": "music.note",
+    "sf": "10046a",
+    "win": "ec4f"
+   },
+   {
+    "n": "mic",
+    "sf": "1002b0",
+    "win": "e720"
+   },
+   {
+    "n": "scissors",
+    "win": "e8c6"
+   }
+  ]
+ },
+ {
+  "title": "Код",
+  "icons": [
+   {
+    "n": "chevron.left.forwardslash.chevron.right",
+    "sf": "10065a",
+    "win": "e943"
+   },
+   {
+    "n": "curlybraces",
+    "sf": "100845"
+   },
+   {
+    "n": "cpu",
+    "sf": "100ae5",
+    "win": "eea1"
+   },
+   {
+    "n": "server.rack",
+    "sf": "100aac"
+   },
+   {
+    "n": "externaldrive",
+    "sf": "100902",
+    "win": "eda2"
+   },
+   {
+    "n": "network",
+    "sf": "100906",
+    "win": "e968"
+   },
+   {
+    "n": "globe",
+    "sf": "1001aa",
+    "win": "e774"
+   },
+   {
+    "n": "gearshape",
+    "sf": "1008cb",
+    "win": "e713"
+   },
+   {
+    "n": "hammer",
+    "sf": "100644",
+    "win": "e90f"
+   },
+   {
+    "n": "wrench.and.screwdriver",
+    "win": "ec7a"
+   },
+   {
+    "n": "ant",
+    "sf": "10031a",
+    "win": "ebe8"
+   },
+   {
+    "n": "ladybug",
+    "sf": "100bd4"
+   },
+   {
+    "n": "cube",
+    "sf": "100418",
+    "win": "e950"
+   },
+   {
+    "n": "shippingbox",
+    "sf": "10041a"
+   },
+   {
+    "n": "puzzlepiece",
+    "sf": "10091a",
+    "win": "ea86"
+   }
+  ]
+ },
+ {
+  "title": "Данные",
+  "icons": [
+   {
+    "n": "chart.bar",
+    "sf": "10043e",
+    "win": "e9d2"
+   },
+   {
+    "n": "chart.pie",
+    "sf": "100440",
+    "win": "eb05"
+   },
+   {
+    "n": "chart.line.uptrend.xyaxis",
+    "sf": "100441"
+   },
+   {
+    "n": "magnifyingglass",
+    "sf": "1002ab",
+    "win": "e721"
+   },
+   {
+    "n": "target",
+    "sf": "10088a",
+    "win": "f272"
+   },
+   {
+    "n": "scope",
+    "sf": "100429"
+   },
+   {
+    "n": "binoculars",
+    "sf": "10080d"
+   },
+   {
+    "n": "doc.text.magnifyingglass",
+    "win": "e773"
+   },
+   {
+    "n": "tablecells",
+    "sf": "1003e3"
+   },
+   {
+    "n": "function",
+    "sf": "10016e",
+    "win": "e8ef"
+   },
+   {
+    "n": "sum",
+    "sf": "10063d"
+   },
+   {
+    "n": "percent",
+    "sf": "10063e"
+   }
+  ]
+ },
+ {
+  "title": "Люди",
+  "icons": [
+   {
+    "n": "person",
+    "sf": "100269",
+    "win": "e77b"
+   },
+   {
+    "n": "person.2",
+    "win": "e716"
+   },
+   {
+    "n": "person.3",
+    "win": "e902"
+   },
+   {
+    "n": "bubble.left.and.bubble.right",
+    "win": "e8f2"
+   },
+   {
+    "n": "megaphone",
+    "sf": "100b32",
+    "win": "e789"
+   },
+   {
+    "n": "quote.bubble",
+    "sf": "10032e",
+    "win": "e90a"
+   },
+   {
+    "n": "hand.thumbsup",
+    "sf": "10027f",
+    "win": "e8e1"
+   },
+   {
+    "n": "face.smiling",
+    "sf": "1003b8",
+    "win": "e76e"
+   },
+   {
+    "n": "heart",
+    "sf": "1002b4",
+    "win": "eb51"
+   },
+   {
+    "n": "star",
+    "sf": "1002c2",
+    "win": "e734"
+   },
+   {
+    "n": "graduationcap",
+    "sf": "100ad3",
+    "win": "e7be"
+   },
+   {
+    "n": "book",
+    "sf": "10025a",
+    "win": "e8f1"
+   },
+   {
+    "n": "books.vertical",
+    "sf": "100b12"
+   },
+   {
+    "n": "newspaper",
+    "sf": "100926"
+   }
+  ]
+ },
+ {
+  "title": "Деньги",
+  "icons": [
+   {
+    "n": "cart",
+    "sf": "100369",
+    "win": "e719"
+   },
+   {
+    "n": "bag",
+    "sf": "100363",
+    "win": "e7bf"
+   },
+   {
+    "n": "creditcard",
+    "sf": "10036f",
+    "win": "e8c7"
+   },
+   {
+    "n": "dollarsign.circle",
+    "sf": "100597",
+    "win": "e825"
+   },
+   {
+    "n": "banknote",
+    "sf": "100b7f"
+   },
+   {
+    "n": "gift",
+    "sf": "100449",
+    "win": "f133"
+   },
+   {
+    "n": "trophy",
+    "sf": "10080f"
+   },
+   {
+    "n": "crown",
+    "sf": "100985"
+   },
+   {
+    "n": "building.2",
+    "win": "ec06"
+   },
+   {
+    "n": "house",
+    "sf": "10039e",
+    "win": "e80f"
+   },
+   {
+    "n": "storefront",
+    "sf": "101f47"
+   }
+  ]
+ },
+ {
+  "title": "Мир",
+  "icons": [
+   {
+    "n": "leaf",
+    "sf": "100972",
+    "win": "e8be"
+   },
+   {
+    "n": "flame",
+    "sf": "10066c"
+   },
+   {
+    "n": "drop",
+    "sf": "100811",
+    "win": "eb42"
+   },
+   {
+    "n": "bolt",
+    "sf": "1002e5",
+    "win": "e945"
+   },
+   {
+    "n": "cloud",
+    "sf": "1001c2",
+    "win": "e753"
+   },
+   {
+    "n": "sun.max",
+    "sf": "1001ad",
+    "win": "e706"
+   },
+   {
+    "n": "moon",
+    "sf": "1001b9",
+    "win": "e708"
+   },
+   {
+    "n": "snowflake",
+    "sf": "1001e5"
+   },
+   {
+    "n": "tree",
+    "sf": "10176f"
+   },
+   {
+    "n": "airplane",
+    "sf": "100453",
+    "win": "e709"
+   },
+   {
+    "n": "car",
+    "sf": "100658",
+    "win": "e804"
+   },
+   {
+    "n": "bicycle",
+    "sf": "100865"
+   },
+   {
+    "n": "map",
+    "sf": "10064a",
+    "win": "e816"
+   },
+   {
+    "n": "location",
+    "sf": "1002d1",
+    "win": "e707"
+   },
+   {
+    "n": "pawprint",
+    "sf": "100f9e"
+   },
+   {
+    "n": "bird",
+    "sf": "1015df"
+   },
+   {
+    "n": "fish",
+    "sf": "101590"
+   },
+   {
+    "n": "tortoise",
+    "sf": "1004d0"
+   },
+   {
+    "n": "hare",
+    "sf": "1004ce"
+   },
+   {
+    "n": "atom",
+    "sf": "100b1a"
+   },
+   {
+    "n": "brain",
+    "sf": "100bd0"
+   },
+   {
+    "n": "lightbulb",
+    "sf": "1006ed",
+    "win": "ea80"
+   },
+   {
+    "n": "key",
+    "sf": "1007d5",
+    "win": "e8d7"
+   },
+   {
+    "n": "lock",
+    "sf": "1003a0",
+    "win": "e72e"
+   },
+   {
+    "n": "shield",
+    "sf": "100666",
+    "win": "ea18"
+   },
+   {
+    "n": "checkmark.seal",
+    "sf": "1001fa",
+    "win": "eb95"
+   },
+   {
+    "n": "stethoscope",
+    "sf": "10077e",
+    "win": "e95e"
+   },
+   {
+    "n": "cross.case",
+    "sf": "100bd9"
+   },
+   {
+    "n": "fork.knife",
+    "sf": "100e29"
+   },
+   {
+    "n": "cup.and.saucer",
+    "sf": "100e18",
+    "win": "ec32"
+   },
+   {
+    "n": "gamecontroller",
+    "sf": "1006f8",
+    "win": "e7fc"
+   },
+   {
+    "n": "laptopcomputer",
+    "sf": "1007db",
+    "win": "e7f8"
+   },
+   {
+    "n": "desktopcomputer",
+    "sf": "100657",
+    "win": "e7f4"
+   },
+   {
+    "n": "keyboard",
+    "sf": "1001f3",
+    "win": "e765"
+   },
+   {
+    "n": "printer",
+    "win": "e749"
+   }
+  ]
+ }
+]
