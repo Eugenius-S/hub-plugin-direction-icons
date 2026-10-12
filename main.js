@@ -5,8 +5,13 @@
 // Строку списка и шапку хаб собирает заново на каждом снимке, а root места живёт между снимками: поэтому знак ставим
 // после сборки (requestAnimationFrame — до отрисовки, мерцания нет): в строке — вместо знака у имени, в шапке — кнопка
 // переезжает перед названием.
+//
+// Итог хода пришёл, а владелец его ещё не открыл (строка «unread») — знак направления плавно подпрыгивает на 5 px, как
+// значок в доке Mac (владелец 12.10); выключается галочкой в «Настройках». Строку пересобирают на каждом снимке — фазу
+// прыжка берём от часов страницы, чтобы новый узел продолжал движение, а не начинал заново.
 const KEY = "hub.directionIcons";
 const DEFAULT = "🧭";
+const HOP = 1600;   // мс: один прыжок и пауза — как длительность анимации di-hop в style.css
 let hub = null, groups = null, openFor = null;
 
 const icons = () => { try { const v = JSON.parse(localStorage.getItem(KEY) || "{}"); return v && typeof v === "object" ? v : {}; } catch { return {}; } };
@@ -42,11 +47,23 @@ function paintRow(root) {
   av.textContent = icon;
 }
 
+const hops = () => (hub.option ? hub.option("hop") : true);   // до API 1.12 галочек нет — прыжок включён
+
+// прыгает, пока итог не прочитан: метку «unread» строке ставит хаб (у открытой сейчас сессии её нет)
+function hopRow(root) {
+  const row = root.closest(".srow"), av = row?.querySelector(".nm .avatar");
+  if (!av) return;
+  const on = row.classList.contains("unread") && hops();
+  av.classList.toggle("di-hop", on);
+  av.style.animationDelay = on ? `-${Math.round(performance.now() % HOP)}ms` : "";
+}
+
 function renderRow(root, snap, { session }) {
   root.classList.add("di-mark");
-  const icon = isDirection(session, snap) ? iconOf(session.name) : "";
+  const direction = isDirection(session, snap);
+  const icon = direction ? iconOf(session.name) : "";
   if (icon) root.dataset.icon = icon; else delete root.dataset.icon;
-  if (icon) requestAnimationFrame(() => paintRow(root));
+  if (direction) requestAnimationFrame(() => { if (icon) paintRow(root); hopRow(root); });
 }
 
 // ───── шапка направления: кнопка и выбор ─────
@@ -126,6 +143,9 @@ export default function register(h) {
   hub.addStyle("style.css");
   hub.addSlot("session.header", { id: "pick", order: 5, render: renderHead });
   hub.addSlot("sidebar.session", { id: "mark", render: renderRow });
+  hub.addOptions?.({ title: "Иконки направлений", options: [
+    { key: "hop", label: "Иконка прыгает, пока итог не прочитан", hint: "Как значок в доке Mac: направление закончило ход, а вы его ещё не открыли", on: true },
+  ] });
   loadGroups();
   // клик мимо выбора и Esc закрывают его; другая вкладка поменяла знаки — перерисовать
   document.addEventListener("click", (e) => {

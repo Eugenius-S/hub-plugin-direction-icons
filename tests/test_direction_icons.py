@@ -51,6 +51,18 @@ class Source(unittest.TestCase):
         self.assertIn("title.before(root)", js)
         self.assertNotIn("pill.after(root)", js)
 
+    def test_unread_direction_hops_and_can_be_switched_off(self):
+        # владелец 12.10: итог не прочитан — знак плавно прыгает на 5 px, как в доке Mac; выключить можно в настройках
+        js, css = read("main.js"), read("style.css")
+        self.assertIn('classList.contains("unread")', js)
+        self.assertIn('hub.addOptions?.(', js)                     # на хабе до API 1.12 плагин не падает
+        self.assertRegex(js, r'key: "hop",[^}]*on: true')          # по умолчанию включено
+        self.assertIn('hub.option("hop")', js)
+        self.assertIn("translateY(-5px)", css)
+        self.assertIn("prefers-reduced-motion", css)
+        hop = int(re.search(r"const HOP = (\d+)", js).group(1))
+        self.assertIn(f"animation: di-hop {hop}ms infinite", css)  # фаза из часов страницы — та же длительность
+
     def test_javascript_parses(self):
         node = shutil.which("node")
         if not node:
