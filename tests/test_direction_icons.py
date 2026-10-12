@@ -65,8 +65,11 @@ class Symbols(unittest.TestCase):
         js = read("main.js")
         self.assertIn('hub.addOptions({ title: "Иконки"', js)
         self.assertIn('hub.addSettings({ id: "direction-icons", title: "Иконки"', js)
-        self.assertIn('b >= 13', js)
-        self.assertIn('kind === "agent" || kind === "direction"', js)    # editable
+        self.assertIn('blockInSettings = () => api(13)', js)
+        self.assertIn('tab: "theme"', js)                               # владелец 12.10: настройки — во вкладке «Тема» (1.14)
+        self.assertIn('kind === "agent" || kind === "direction" || kind === "hub"', js)    # editable, и хаб (владелец 12.10)
+        self.assertIn('s.kind === "hub" ? "hub"', js)
+        self.assertIn('hub: ["", "house"]', js)                         # у хаба эмодзи нет, символ — дом
         self.assertIn('s.role === "agent" ? "agent"', js)
         self.assertIn('"🎨": "paintpalette"', js)                       # символ — по эмодзи сессии
         symbols = {i["n"] for g in json.loads(read("symbols.json")) for i in g["icons"]}

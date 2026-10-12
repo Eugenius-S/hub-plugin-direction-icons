@@ -18,7 +18,7 @@
 const KEY = "hub.directionIcons";
 const SET = "hub.directionIcons.settings";
 const COMPASS = { sf: "100dcc", win: "e812" };   // компас направления в стиле «Символы»: location.north.circle / MapCompassTop
-const ROLE = { agent: ["🤖", "person"], direction: ["🧭", null], other: ["", "hammer"] };   // знак хаба и символ роли
+const ROLE = { agent: ["🤖", "person"], direction: ["🧭", null], other: ["", "hammer"], hub: ["", "house"] };   // знак хаба и символ роли
 const HOP = 1600;   // мс: один прыжок и пауза — как длительность анимации di-hop в style.css
 const FONTS = {
   sf: '"SF Pro", "SF Pro Text", "SF Pro Display", "SF Compact"',
@@ -82,10 +82,10 @@ function symbolFont() {
 }
 const symbolStyle = () => settings().style === "sym" && !!symbolFont() && !!symbols;
 
-// кто сессия: специалист, направление или остальные (исполнители, обычные); хаб — без знака
+// кто сессия: хаб, специалист, направление или остальные (исполнители, обычные)
 const isDirection = (s, snap) => !!s && s.kind !== "hub" && s.role !== "agent" && (!!s.backlog || (snap?.directions || []).includes(s.name));
-const kindOf = (s, snap) => (!s || s.kind === "hub" ? null : s.role === "agent" ? "agent" : isDirection(s, snap) ? "direction" : "other");
-const editable = (kind) => kind === "agent" || kind === "direction";   // знак меняют у специалистов и направлений
+const kindOf = (s, snap) => (!s ? null : s.kind === "hub" ? "hub" : s.role === "agent" ? "agent" : isDirection(s, snap) ? "direction" : "other");
+const editable = (kind) => kind === "agent" || kind === "direction" || kind === "hub";   // знак меняют у хаба, специалистов и направлений
 
 const glyph = (code) => String.fromCodePoint(parseInt(code, 16));
 const codeOf = (sym) => { for (const g of symbols || []) for (const s of g.icons) if (s.n === sym) return s[symbolFont()] || null; return null; };
@@ -114,6 +114,12 @@ function paintIcon(node, name, kind, base) {
   node.textContent = code ? glyph(code) : emoji;
 }
 
+function paintButton(btn, name, kind, base) {
+  paintIcon(btn, name, kind, base);
+  btn.classList.toggle("di-empty", !btn.textContent);   // у хаба эмодзи по умолчанию нет — кнопка всё равно видна
+  if (!btn.textContent) btn.textContent = "+";
+}
+
 // знак в текущем стиле: эмодзи — e.emoji, символ — e.sym; второй остаётся
 function save(name, patch) {
   const all = icons(), e = { ...entry(name), ...patch };
@@ -127,7 +133,7 @@ function save(name, patch) {
 // перерисовка страницы список обновляет, шапку открытой сессии — нет: кнопку и выбор обновляем сами
 function repaint() {
   for (const r of document.querySelectorAll(".di-slot")) if (r.dataset.name) {
-    paintIcon(r.querySelector(".di-btn"), r.dataset.name, r.dataset.kind, r.dataset.base);
+    paintButton(r.querySelector(".di-btn"), r.dataset.name, r.dataset.kind, r.dataset.base);
     r.querySelector(".di-pop")?.remove();
     sync(r);
   }
@@ -151,9 +157,13 @@ function button(cls, text, onClick) {
 
 // ───── список сессий: свой знак и стиль ─────
 function paintRow(root) {
-  const row = root.closest(".srow"), av = row?.querySelector(".nm .avatar");
+  const row = root.closest(".srow"), { kind, name } = root.dataset;
+  let av = row?.querySelector(".nm .avatar");
+  if (!av && kind === "hub" && root.dataset.icon) {   // у строки «Хаб» своего знака нет — ставим
+    av = hub.el("span", "avatar");
+    row.querySelector(".nm")?.prepend(av, document.createTextNode(" "));
+  }
   if (!av) return;   // у сессии нет знака (исполнитель без значка) — нечего менять
-  const { kind, name } = root.dataset;
   if (root.dataset.icon) {
     av.className = "avatar";   // не знак темы (kit-img): картинкой он не станет
     av.style.backgroundImage = "";
@@ -204,7 +214,7 @@ function popover(name, kind, base) {
     if (v) save(name, { emoji: [...v].slice(0, 2).join("") });   // один знак, иногда из двух символов (флаг, составной)
   }));
   foot.append(button("btn quiet di-own", "Как было", () => save(name, sym ? { sym: "" } : { emoji: "" })));
-  pop.append(foot, hub.el("div", "di-hint", "Стиль, цвет и прыжок — «Настройки» → «Иконки»"));
+  pop.append(foot, hub.el("div", "di-hint", `Стиль, цвет и прыжок — «Настройки» → «${inTheme() ? "Тема" : "Иконки"}»`));
   return pop;
 }
 
@@ -226,7 +236,7 @@ function renderHead(root, snap, { session }) {
   }
   if (root.dataset.name !== name) root.querySelector(".di-pop")?.remove();
   Object.assign(root.dataset, { name, kind, base: session.icon || ROLE[kind][0] });
-  paintIcon(btn, name, kind, root.dataset.base);
+  paintButton(btn, name, kind, root.dataset.base);
   btn.title = "Иконка — выбрать";
   sync(root);
   requestAnimationFrame(() => {   // слева, перед названием (владелец 07.10), а не у правого края
@@ -256,7 +266,7 @@ function paintSettings(root) {
     style.append(b);
   }
   const rows = [hub.el("div", "di-set-title", "Стиль — для всех знаков списка"), style,
-    hub.el("p", "hint", f ? `Символы — ${f === "sf" ? "SF Symbols (шрифт SF Pro)" : "Segoe Fluent Icons"}. Знак специалиста или направления — кнопкой слева от названия в его шапке.`
+    hub.el("p", "hint", f ? `Символы — ${f === "sf" ? "SF Symbols (шрифт SF Pro)" : "Segoe Fluent Icons"}. Знак хаба, специалиста или направления — кнопкой слева от названия в его шапке.`
       : "Символов нет: нужен шрифт SF Pro (Mac, developer.apple.com/fonts) или Segoe Fluent Icons (Windows).")];
   if (symbolStyle()) {
     const colors = hub.el("div", "di-colors");
@@ -297,8 +307,10 @@ function paintSettings(root) {
   root.replaceChildren(...rows);
 }
 
-// API 1.13 — блок во вкладке «Настройки» (своя вкладка уезжала на вторую строку); раньше — своя вкладка
-const blockInSettings = () => { const [a, b] = String(hub.api || "1.1").split(".").map(Number); return a > 1 || (a === 1 && b >= 13); };
+// API 1.14 — блок во вкладке «Тема» (владелец 12.10), 1.13 — в «Настройках» (своя вкладка уезжала на вторую строку);
+// раньше — своя вкладка
+const api = (minor) => { const [a, b] = String(hub.api || "1.1").split(".").map(Number); return a > 1 || (a === 1 && b >= minor); };
+const blockInSettings = () => api(13), inTheme = () => api(14);
 const drawSettings = (root) => { if (!root.contains(document.activeElement)) paintSettings(root); };
 
 export default function register(h) {
@@ -306,7 +318,7 @@ export default function register(h) {
   hub.addStyle("style.css");
   hub.addSlot("session.header", { id: "pick", order: 5, render: renderHead });
   hub.addSlot("sidebar.session", { id: "mark", render: renderRow });
-  if (blockInSettings()) hub.addOptions({ title: "Иконки", hint: "Знаки списка сессий: стиль, цвет символов, прыжок", render: drawSettings });
+  if (blockInSettings()) hub.addOptions({ title: "Иконки", hint: "Знаки списка сессий: стиль, цвет символов, прыжок", tab: "theme", render: drawSettings });
   else hub.addSettings({ id: "direction-icons", title: "Иконки", render: drawSettings });
   // символы рисуются после загрузки набора — перерисовать, чтобы встали вместо запасного знака
   Promise.all([load("emoji.json"), load("symbols.json")]).then(([e, s]) => { groups = e; symbols = s; repaint(); });

@@ -6,6 +6,7 @@
   border: 1px solid transparent; border-radius: var(--radius); background: transparent; color: var(--foreground);
   font: inherit; font-size: calc(18px * var(--ui-scale, 1)); line-height: 1; cursor: pointer; }
 .di-btn:hover, .di-btn[aria-expanded="true"] { background: var(--muted); border-color: var(--border); }
+.di-btn.di-empty { border: 1px dashed var(--border); color: var(--muted-foreground); font-size: calc(15px * var(--ui-scale, 1)); }
 .di-pop { position: absolute; top: calc(100% + 6px); left: 0; z-index: var(--z-popover, 60); width: 336px; max-height: 70vh;
   overflow: hidden auto; padding: var(--space-3); border: 1px solid var(--border); border-radius: var(--radius-lg);
   background: var(--card); color: var(--foreground); box-shadow: 0 12px 32px rgb(0 0 0 / 18%); display: grid; gap: var(--space-2); }
