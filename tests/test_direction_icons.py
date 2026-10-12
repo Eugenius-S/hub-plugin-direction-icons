@@ -56,9 +56,22 @@ class Symbols(unittest.TestCase):
         self.assertIn('if (id === "sym" && !f) b.disabled = true', js)
         self.assertIn("COLORS[h % COLORS.length]", js)
         # владелец 12.10: знак — в направлении, стиль, цвет и прыжок — в «Настройках»
-        self.assertIn('hub.addSettings({ id: "direction-icons", title: "Иконки направлений"', js)
-        self.assertNotIn("addOptions", js)
-        self.assertNotIn("di-tab", js)   # «случайный» — постоянный для направления, не мигает
+        self.assertNotIn("di-tab", js)
+
+    def test_settings_block_and_every_sidebar_icon(self):
+        # владелец 12.10: своя вкладка уехала на вторую строку — блок во вкладке «Настройки» (API 1.13), на старом
+        # хабе — короткая своя; стиль — у всех знаков списка (специалисты, направления, исполнители); менять знак
+        # можно у специалистов и направлений
+        js = read("main.js")
+        self.assertIn('hub.addOptions({ title: "Иконки"', js)
+        self.assertIn('hub.addSettings({ id: "direction-icons", title: "Иконки"', js)
+        self.assertIn('b >= 13', js)
+        self.assertIn('kind === "agent" || kind === "direction"', js)    # editable
+        self.assertIn('s.role === "agent" ? "agent"', js)
+        self.assertIn('"🎨": "paintpalette"', js)                       # символ — по эмодзи сессии
+        symbols = {i["n"] for g in json.loads(read("symbols.json")) for i in g["icons"]}
+        mapped = set(re.findall(r'": "([a-z.]+)"', js[js.index("BY_EMOJI"):js.index("};", js.index("BY_EMOJI"))]))
+        self.assertEqual(mapped - symbols, set())                       # каждый символ карты есть в наборе   # «случайный» — постоянный для направления, не мигает
         self.assertIn('load("symbols.json")', js)
 
 
