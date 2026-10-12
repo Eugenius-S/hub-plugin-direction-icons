@@ -7,14 +7,17 @@
 // переезжает перед названием.
 //
 // Итог хода пришёл, а владелец его ещё не открыл (строка «unread») — знак направления плавно подпрыгивает на 5 px, как
-// значок в доке Mac (владелец 12.10); выключается галочкой в «Настройках». Строку пересобирают на каждом снимке — фазу
-// прыжка берём от часов страницы, чтобы новый узел продолжал движение, а не начинал заново.
+// значок в доке Mac (владелец 12.10). Строку пересобирают на каждом снимке — фазу прыжка берём от часов страницы, чтобы
+// новый узел продолжал движение, а не начинал заново.
 //
 // Стиль знака (владелец 12.10): эмодзи или символ системного шрифта — на Mac SF Symbols (шрифт SF Pro), на Windows
-// Segoe Fluent Icons (MDL2 на Windows 10); шрифта нет — вкладка «Символы» неактивна. У символа свой цвет или случайный
-// (постоянный для направления). Значение в хранилище: строка — эмодзи, { sym, color } — символ (color "" — случайный).
+// Segoe Fluent Icons (MDL2 на Windows 10); шрифта нет — стиль «Символы» неактивен. Стиль, цвет символов (свой или
+// случайный — постоянный для направления) и прыжок — общие, вкладка «Настройки» → «Иконки направлений»; в направлении —
+// только выбор его знака в текущем стиле. У направления хранятся оба знака: { emoji, sym } — смена стиля их не теряет.
 const KEY = "hub.directionIcons";
+const SET = "hub.directionIcons.settings";
 const DEFAULT = "🧭";
+const COMPASS = { sf: "100dcc", win: "e812" };   // компас по умолчанию в стиле «Символы»: location.north.circle / MapCompassTop
 const HOP = 1600;   // мс: один прыжок и пауза — как длительность анимации di-hop в style.css
 const FONTS = {
   sf: '"SF Pro", "SF Pro Text", "SF Pro Display", "SF Compact"',
@@ -23,10 +26,29 @@ const FONTS = {
 const COLORS = ["#e5484d", "#f76b15", "#ffb224", "#30a46c", "#12a594", "#0090ff", "#3e63dd", "#8e4ec6", "#d6409f", "#8d8d86"];
 let hub = null, groups = null, symbols = null, openFor = null, font;
 
-const icons = () => { try { const v = JSON.parse(localStorage.getItem(KEY) || "{}"); return v && typeof v === "object" ? v : {}; } catch { return {}; } };
-const valueOf = (name) => icons()[name];
-const emojiOf = (name) => (typeof valueOf(name) === "string" && valueOf(name)) || "";
-const symOf = (name) => { const v = valueOf(name); return v && typeof v === "object" && typeof v.sym === "string" ? v : null; };
+const readJSON = (key) => { try { const v = JSON.parse(localStorage.getItem(key) || "{}"); return v && typeof v === "object" ? v : {}; } catch { return {}; } };
+const writeJSON = (key, v) => { try { localStorage.setItem(key, JSON.stringify(v)); } catch { /* нет хранилища */ } };
+const icons = () => readJSON(KEY);
+// знак направления: строка (до 1.3) — эмодзи; { sym, color } (1.2) — символ, его цвет теперь общий из настроек
+function entry(name) {
+  const v = icons()[name];
+  if (typeof v === "string") return { emoji: v };
+  return v && typeof v === "object" ? { emoji: typeof v.emoji === "string" ? v.emoji : "", sym: typeof v.sym === "string" ? v.sym : "" } : {};
+}
+
+// общие настройки; до 1.3 их не было — у кого уже стоят символы, тому стиль «Символы»
+function settings() {
+  const s = readJSON(SET);
+  return {
+    style: s.style === "sym" || s.style === "emoji" ? s.style : Object.keys(icons()).some((n) => entry(n).sym) ? "sym" : "emoji",
+    color: typeof s.color === "string" ? s.color : "",
+    hop: s.hop !== false,
+  };
+}
+function setSettings(patch) {
+  writeJSON(SET, { ...settings(), ...patch });
+  repaint();
+}
 
 // шрифт символов этой машины: глиф шрифта шире/уже запасного — шрифт есть (ширина у двух запасных разная — без совпадений)
 function symbolFont() {
@@ -40,36 +62,46 @@ function symbolFont() {
   }
   return font;
 }
+const symbolStyle = () => settings().style === "sym" && !!symbolFont() && !!symbols;
 
+const glyph = (code) => String.fromCodePoint(parseInt(code, 16));
 const codeOf = (sym) => { for (const g of symbols || []) for (const s of g.icons) if (s.n === sym) return s[symbolFont()]; return null; };
-const charOf = (sym) => { const c = codeOf(sym); return c ? String.fromCodePoint(parseInt(c, 16)) : ""; };
-function colorOf(name, v) {
-  if (v.color) return v.color;
+function colorOf(name) {
+  const c = settings().color;
+  if (c) return c;
   let h = 0;
   for (const ch of name) h = (h * 31 + ch.codePointAt(0)) >>> 0;
   return COLORS[h % COLORS.length];   // случайный, но постоянный: от имени направления
 }
 
-// знак направления в узел: эмодзи текстом или символ своим шрифтом и цветом
+// знак направления в узел: в стиле «Символы» — символ шрифтом и цветом, иначе эмодзи
 function paintIcon(node, name) {
-  const v = symOf(name), ch = v && symbolFont() && symbols ? charOf(v.sym) : "";
-  node.classList.toggle("di-sym", !!ch);
-  node.style.fontFamily = ch ? FONTS[symbolFont()] : "";
-  node.style.color = ch ? colorOf(name, v) : "";
-  node.textContent = ch || emojiOf(name) || DEFAULT;
+  const e = entry(name), code = symbolStyle() ? (e.sym && codeOf(e.sym)) || COMPASS[symbolFont()] : "";
+  node.classList.toggle("di-sym", !!code);
+  node.style.fontFamily = code ? FONTS[symbolFont()] : "";
+  node.style.color = code ? colorOf(name) : "";
+  node.textContent = code ? glyph(code) : e.emoji || DEFAULT;
 }
 
-function save(name, value, close = true) {
-  const all = icons();
-  if (value && value !== DEFAULT) all[name] = value; else delete all[name];   // компас — по умолчанию, отдельно не хранится
-  try { localStorage.setItem(KEY, JSON.stringify(all)); } catch { /* нет хранилища */ }
-  if (close) openFor = null;
-  // перерисовка страницы список обновляет, шапку открытого направления — нет: кнопку и выбор обновляем сами
-  for (const r of document.querySelectorAll(".di-slot")) if (r.dataset.name === name) {
-    paintIcon(r.querySelector(".di-btn"), name);
+// знак в текущем стиле: эмодзи — e.emoji, символ — e.sym; второй остаётся
+function save(name, patch) {
+  const all = icons(), e = { ...entry(name), ...patch };
+  if (e.emoji === DEFAULT) e.emoji = "";   // компас — по умолчанию, отдельно не хранится
+  for (const k of Object.keys(e)) if (!e[k]) delete e[k];
+  if (Object.keys(e).length) all[name] = e; else delete all[name];
+  writeJSON(KEY, all);
+  openFor = null;
+  repaint();
+}
+
+// перерисовка страницы список обновляет, шапку открытого направления — нет: кнопку и выбор обновляем сами
+function repaint() {
+  for (const r of document.querySelectorAll(".di-slot")) if (r.dataset.name) {
+    paintIcon(r.querySelector(".di-btn"), r.dataset.name);
     r.querySelector(".di-pop")?.remove();
     sync(r);
   }
+  if (settingsRoot) paintSettings(settingsRoot);
   hub.redraw ? hub.redraw() : dispatchEvent(new Event("hub-redraw"));
 }
 // направление — как его видит хаб: не специалист и не хаб, ведёт бэклог или есть в списке направлений
@@ -82,9 +114,14 @@ async function load(file) {
   } catch { return []; }
 }
 
-// ───── список сессий: знак вместо компаса ─────
-const hops = () => (hub.option ? hub.option("hop") : true);   // до API 1.12 галочек нет — прыжок включён
+function button(cls, text, onClick) {
+  const b = hub.el("button", cls, text);
+  b.type = "button";
+  b.addEventListener("click", onClick);
+  return b;
+}
 
+// ───── список сессий: знак вместо компаса ─────
 function paintRow(root) {
   const row = root.closest(".srow"), av = row?.querySelector(".nm .avatar");
   if (!av) return;
@@ -96,7 +133,7 @@ function paintRow(root) {
     paintIcon(av, root.dataset.name);
   }
   // прыгает, пока итог не прочитан: метку «unread» строке ставит хаб (у открытой сейчас сессии её нет)
-  const on = row.classList.contains("unread") && hops();
+  const on = row.classList.contains("unread") && settings().hop;
   av.classList.toggle("di-hop", on);
   av.style.animationDelay = on ? `-${Math.round(performance.now() % HOP)}ms` : "";
 }
@@ -105,103 +142,37 @@ function renderRow(root, snap, { session }) {
   root.classList.add("di-mark");
   if (!isDirection(session, snap)) { delete root.dataset.icon; return; }
   root.dataset.name = session.name;
-  if (valueOf(session.name)) root.dataset.icon = "1"; else delete root.dataset.icon;
+  if (symbolStyle() || entry(session.name).emoji) root.dataset.icon = "1"; else delete root.dataset.icon;
   requestAnimationFrame(() => paintRow(root));
 }
 
-// ───── шапка направления: кнопка и выбор ─────
-function button(cls, text, onClick) {
-  const b = hub.el("button", cls, text);
-  b.type = "button";
-  b.addEventListener("click", onClick);
-  return b;
-}
-
-function emojiTab(pop, name) {
-  for (const g of groups || []) {
-    pop.append(hub.el("div", "di-title", g.title));
-    const grid = hub.el("div", "di-grid");
-    for (const e of g.icons) {
-      const b = button("di-opt", e, () => save(name, e));
-      b.setAttribute("aria-pressed", String(!symOf(name) && (emojiOf(name) || DEFAULT) === e));
-      grid.append(b);
-    }
-    pop.append(grid);
-  }
-  const own = button("btn quiet di-own", "Свой знак…", () => {
-    const v = (window.prompt("Эмодзи для направления", emojiOf(name) || DEFAULT) || "").trim();
-    if (v) save(name, [...v].slice(0, 2).join(""));   // один знак, иногда из двух символов (флаг, составной)
-  });
-  const reset = button("btn quiet di-own", "Вернуть компас", () => save(name, ""));
-  const foot = hub.el("div", "di-foot");
-  foot.append(own, reset);
-  pop.append(foot);
-}
-
-function symbolTab(pop, name, state) {
-  const cur = symOf(name), fam = FONTS[symbolFont()];
-  const colors = hub.el("div", "di-colors");
-  const pickColor = (c) => { state.color = c; if (cur) save(name, { sym: cur.sym, color: c }, false); else redrawPop(pop, name, state); };
-  const rnd = button("di-swatch di-rnd", "", () => pickColor(""));
-  rnd.title = "Случайный: свой у каждого направления";
-  rnd.setAttribute("aria-pressed", String(!state.color));
-  colors.append(rnd);
-  for (const c of COLORS) {
-    const s = button("di-swatch", "", () => pickColor(c));
-    s.style.background = c;
-    s.title = c;
-    s.setAttribute("aria-pressed", String(state.color === c));
-    colors.append(s);
-  }
-  const own = hub.el("input", "di-swatch di-own-color");
-  own.type = "color";
-  own.title = "Свой цвет";
-  own.value = state.color && !COLORS.includes(state.color) ? state.color : "#888888";
-  own.setAttribute("aria-pressed", String(!!state.color && !COLORS.includes(state.color)));
-  own.addEventListener("change", () => pickColor(own.value));
-  colors.append(own);
-  pop.append(hub.el("div", "di-title", "Цвет"), colors);
-  const color = colorOf(name, { color: state.color });
-  for (const g of symbols || []) {
-    const list = g.icons.filter((s) => s[symbolFont()]);
+// ───── шапка направления: кнопка и выбор знака в текущем стиле ─────
+function popover(name) {
+  const e = entry(name), sym = symbolStyle();
+  const pop = hub.el("div", "di-pop");
+  pop.setAttribute("role", "dialog");
+  pop.setAttribute("aria-label", "Иконка направления");
+  for (const g of (sym ? symbols : groups) || []) {
+    const list = sym ? g.icons.filter((s) => s[symbolFont()]) : g.icons;
     if (!list.length) continue;
     pop.append(hub.el("div", "di-title", g.title));
     const grid = hub.el("div", "di-grid");
     for (const s of list) {
-      const b = button("di-opt di-sym", String.fromCodePoint(parseInt(s[symbolFont()], 16)), () => save(name, { sym: s.n, color: state.color }));
-      b.style.fontFamily = fam;
-      b.style.color = color;
-      b.title = s.n;
-      b.setAttribute("aria-pressed", String(cur?.sym === s.n));
+      const b = sym ? button("di-opt di-sym", glyph(s[symbolFont()]), () => save(name, { sym: s.n }))
+        : button("di-opt", s, () => save(name, { emoji: s }));
+      if (sym) { b.style.fontFamily = FONTS[symbolFont()]; b.style.color = colorOf(name); b.title = s.n; }
+      b.setAttribute("aria-pressed", String(sym ? e.sym === s.n : (e.emoji || DEFAULT) === s));
       grid.append(b);
     }
     pop.append(grid);
   }
-}
-
-function redrawPop(pop, name, state) {
-  const fresh = popover(name, state);
-  pop.replaceWith(fresh);
-}
-
-function popover(name, state = null) {
-  const cur = symOf(name);
-  state = state || { tab: cur && symbolFont() ? "sym" : "emoji", color: cur?.color || "" };
-  const pop = hub.el("div", "di-pop");
-  pop.setAttribute("role", "dialog");
-  pop.setAttribute("aria-label", "Иконка направления");
-  const tabs = hub.el("div", "di-tabs");
-  for (const [id, label] of [["emoji", "Эмодзи"], ["sym", "Символы"]]) {
-    const t = button("di-tab", label, () => { state.tab = id; redrawPop(pop, name, state); });
-    t.setAttribute("aria-pressed", String(state.tab === id));
-    if (id === "sym" && !symbolFont()) {
-      t.disabled = true;
-      t.title = "Нет шрифта символов: на Mac — SF Pro (developer.apple.com/fonts), на Windows — Segoe Fluent Icons";
-    }
-    tabs.append(t);
-  }
-  pop.append(tabs);
-  if (state.tab === "sym" && symbolFont()) symbolTab(pop, name, state); else emojiTab(pop, name);
+  const foot = hub.el("div", "di-foot");
+  if (!sym) foot.append(button("btn quiet di-own", "Свой знак…", () => {
+    const v = (window.prompt("Эмодзи для направления", e.emoji || DEFAULT) || "").trim();
+    if (v) save(name, { emoji: [...v].slice(0, 2).join("") });   // один знак, иногда из двух символов (флаг, составной)
+  }));
+  foot.append(button("btn quiet di-own", "Вернуть компас", () => save(name, sym ? { sym: "" } : { emoji: "" })));
+  pop.append(foot, hub.el("div", "di-hint", "Стиль, цвет и прыжок — «Настройки» → «Иконки направлений»"));
   return pop;
 }
 
@@ -237,27 +208,71 @@ function sync(root) {
   else if (openFor !== name && pop) pop.remove();
 }
 
+// ───── «Настройки» → «Иконки направлений»: стиль, цвет символов, прыжок ─────
+let settingsRoot = null;
+
+function paintSettings(root) {
+  settingsRoot = root;
+  const s = settings(), f = symbolFont();
+  const style = hub.el("div", "seg");
+  for (const [id, label] of [["emoji", "Эмодзи"], ["sym", "Символы"]]) {
+    const b = button(null, label, () => setSettings({ style: id }));
+    b.setAttribute("aria-pressed", String((id === "sym" ? symbolStyle() : !symbolStyle())));
+    if (id === "sym" && !f) b.disabled = true;
+    style.append(b);
+  }
+  const rows = [hub.el("div", "di-set-title", "Стиль"), style,
+    hub.el("p", "hint", f ? `Символы — ${f === "sf" ? "SF Symbols (шрифт SF Pro)" : "Segoe Fluent Icons"}; знак у каждого направления выбирается в его шапке, кнопкой слева от названия.`
+      : "Символов нет: нужен шрифт SF Pro (Mac, developer.apple.com/fonts) или Segoe Fluent Icons (Windows).")];
+  if (symbolStyle()) {
+    const colors = hub.el("div", "di-colors");
+    const rnd = button("di-swatch di-rnd", "", () => setSettings({ color: "" }));
+    rnd.title = "Случайный: свой у каждого направления";
+    rnd.setAttribute("aria-pressed", String(!s.color));
+    colors.append(rnd);
+    for (const c of COLORS) {
+      const b = button("di-swatch", "", () => setSettings({ color: c }));
+      b.style.background = c;
+      b.title = c;
+      b.setAttribute("aria-pressed", String(s.color === c));
+      colors.append(b);
+    }
+    const own = hub.el("input", "di-swatch di-own-color");
+    own.type = "color";
+    own.title = "Свой цвет";
+    own.value = s.color && !COLORS.includes(s.color) ? s.color : "#888888";
+    own.setAttribute("aria-pressed", String(!!s.color && !COLORS.includes(s.color)));
+    own.addEventListener("change", () => setSettings({ color: own.value }));
+    colors.append(own);
+    rows.push(hub.el("div", "di-set-title", "Цвет символов"), colors);
+  }
+  const hop = hub.el("label", "opt");
+  const box = hub.el("input");
+  box.type = "checkbox";
+  box.checked = s.hop;
+  box.addEventListener("change", () => setSettings({ hop: box.checked }));
+  hop.append(box, document.createTextNode(" Иконка прыгает, пока итог не прочитан"));
+  rows.push(hub.el("div", "di-set-title", "Прыжок"), hop,
+    hub.el("p", "hint", "Как значок в доке Mac: направление закончило ход, а вы его ещё не открыли."));
+  root.classList.add("di-set");
+  root.replaceChildren(...rows);
+}
+
 export default function register(h) {
   hub = h;
   hub.addStyle("style.css");
   hub.addSlot("session.header", { id: "pick", order: 5, render: renderHead });
   hub.addSlot("sidebar.session", { id: "mark", render: renderRow });
-  hub.addOptions?.({ title: "Иконки направлений", options: [
-    { key: "hop", label: "Иконка прыгает, пока итог не прочитан", hint: "Как значок в доке Mac: направление закончило ход, а вы его ещё не открыли", on: true },
-  ] });
+  hub.addSettings({ id: "direction-icons", title: "Иконки направлений", render: (root) => { if (!root.contains(document.activeElement)) paintSettings(root); } });
   // символы рисуются после загрузки набора — перерисовать, чтобы встали вместо запасного знака
-  Promise.all([load("emoji.json"), load("symbols.json")]).then(([e, s]) => {
-    groups = e; symbols = s;
-    hub.redraw ? hub.redraw() : dispatchEvent(new Event("hub-redraw"));
-    for (const r of document.querySelectorAll(".di-slot")) if (r.dataset.name) paintIcon(r.querySelector(".di-btn"), r.dataset.name);
-  });
-  // клик мимо выбора и Esc закрывают его; другая вкладка поменяла знаки — перерисовать
+  Promise.all([load("emoji.json"), load("symbols.json")]).then(([e, s]) => { groups = e; symbols = s; repaint(); });
+  // клик мимо выбора и Esc закрывают его (путь события: нажатая кнопка к этому моменту может быть уже вне страницы);
+  // другая вкладка поменяла знаки или настройки — перерисовать
   document.addEventListener("click", (e) => {
-    // путь события, а не target: вкладка и цвет перестраивают выбор, и нажатая кнопка к этому моменту уже вне страницы
     if (openFor && !e.composedPath().some((n) => n.classList?.contains("di-slot"))) { openFor = null; document.querySelectorAll(".di-slot").forEach(sync); }
   });
   document.addEventListener("keydown", (e) => {
     if (e.key === "Escape" && openFor) { openFor = null; document.querySelectorAll(".di-slot").forEach(sync); }
   });
-  addEventListener("storage", (e) => { if (e.key === KEY) hub.redraw ? hub.redraw() : dispatchEvent(new Event("hub-redraw")); });
+  addEventListener("storage", (e) => { if (e.key === KEY || e.key === SET) repaint(); });
 }

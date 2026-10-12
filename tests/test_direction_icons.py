@@ -53,8 +53,12 @@ class Symbols(unittest.TestCase):
         js = read("main.js")
         self.assertIn('"Segoe Fluent Icons"', js)
         self.assertIn('"SF Pro"', js)
-        self.assertRegex(js, r'id === "sym" && !symbolFont\(\)\) \{\s*t\.disabled = true')
-        self.assertIn("COLORS[h % COLORS.length]", js)   # «случайный» — постоянный для направления, не мигает
+        self.assertIn('if (id === "sym" && !f) b.disabled = true', js)
+        self.assertIn("COLORS[h % COLORS.length]", js)
+        # владелец 12.10: знак — в направлении, стиль, цвет и прыжок — в «Настройках»
+        self.assertIn('hub.addSettings({ id: "direction-icons", title: "Иконки направлений"', js)
+        self.assertNotIn("addOptions", js)
+        self.assertNotIn("di-tab", js)   # «случайный» — постоянный для направления, не мигает
         self.assertIn('load("symbols.json")', js)
 
 
@@ -78,9 +82,8 @@ class Source(unittest.TestCase):
         # владелец 12.10: итог не прочитан — знак плавно прыгает на 5 px, как в доке Mac; выключить можно в настройках
         js, css = read("main.js"), read("style.css")
         self.assertIn('classList.contains("unread")', js)
-        self.assertIn('hub.addOptions?.(', js)                     # на хабе до API 1.12 плагин не падает
-        self.assertRegex(js, r'key: "hop",[^}]*on: true')          # по умолчанию включено
-        self.assertIn('hub.option("hop")', js)
+        self.assertIn('s.hop !== false', js)                       # по умолчанию включено
+        self.assertIn('settings().hop', js)
         self.assertIn("translateY(-5px)", css)
         self.assertIn("prefers-reduced-motion", css)
         hop = int(re.search(r"const HOP = (\d+)", js).group(1))
