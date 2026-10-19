@@ -2,6 +2,8 @@
 .di-mark { display: none; }
 .di-slot { position: relative; display: inline-flex; flex: none; }
 .di-slot[hidden] { display: none; }
+/* в шапке хаба v1.1 у названия свой значок с палитрой — наша кнопка его заменяет, выбора не два подряд */
+.di-slot:not([hidden]) ~ h2 .head-av { display: none; }
 .di-btn { display: inline-flex; align-items: center; justify-content: center; width: 30px; height: 30px; padding: 0;
   border: 1px solid transparent; border-radius: var(--radius); background: transparent; color: var(--foreground);
   font: inherit; font-size: calc(18px * var(--ui-scale, 1)); line-height: 1; cursor: pointer; }

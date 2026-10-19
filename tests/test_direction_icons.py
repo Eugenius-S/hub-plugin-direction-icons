@@ -18,7 +18,7 @@ def read(name):
 class Manifest(unittest.TestCase):
     def test_manifest_is_complete(self):
         man = json.loads(read("hub-plugin.json"))
-        self.assertEqual((man["name"], man["web"], man["hub"]), ("direction-icons", "main.js", "^1.10"))   # hub.redraw — 1.10
+        self.assertEqual((man["name"], man["web"], man["hub"]), ("direction-icons", "main.js", "^1.16"))   # own_icon у сессии — 1.16
         for key in ("icon", "description", "why", "version"):
             self.assertTrue(str(man.get(key) or "").strip(), key)
         for key in ("icon", "web"):
@@ -111,6 +111,33 @@ class Source(unittest.TestCase):
         on = re.search(r"const on = (.+);", js).group(1)
         self.assertNotIn('kind === "direction"', on)
         self.assertIn('classList.contains("unread")', on)
+
+    def test_the_emoji_lives_in_the_core(self):
+        # 1.7.0 (владелец 19.10, «починить под новый хаб»): значок сессии — у ядра (POST /api/session/icon, own_icon);
+        # плагин пишет туда эмодзи и не перекрывает его своим из localStorage
+        js = read("main.js")
+        self.assertIn('hub.post("/api/session/icon"', js)
+        self.assertNotIn("e.emoji || base", js)                    # в списке и шапке — значок ядра, не локальный
+        self.assertNotIn("entry(", js)
+        self.assertNotIn("emoji: [...v]", js)                      # «Свой знак…» не пишет в localStorage
+
+    def test_one_picker_in_the_header(self):
+        # у шапки хаба v1.1 свой значок с палитрой (.head-av) — кнопка плагина его прячет, а не стоит рядом с ним
+        self.assertIn(".di-slot:not([hidden]) ~ h2 .head-av { display: none; }", read("style.css"))
+
+    def test_a_newer_core_icon_beats_the_local_symbol(self):
+        # символ помнит эмодзи ядра, при котором выбран (for); значок в ядре сменили — символ уступает
+        js = read("main.js")
+        self.assertIn("e.for === base", js)
+        self.assertIn("{ sym, for: base }", js)
+
+    def test_old_local_emoji_moves_to_the_core_once(self):
+        # эмодзи прежних версий уходит в ядро, если там своего значка нет; есть — ядро новее, локальный убирается
+        js = read("main.js")
+        self.assertIn("function migrate(snap)", js)
+        self.assertIn("if (s.own_icon || e.emoji === s.icon)", js)
+        self.assertIn('"own_icon" in s', js)                       # старый хаб без значков ядра — не трогаем
+        self.assertIn("asked.has(s.name)", js)                     # отказ ядра не повторяется
 
     def test_javascript_parses(self):
         node = shutil.which("node")

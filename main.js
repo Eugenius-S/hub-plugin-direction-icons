@@ -2,6 +2,12 @@
 // названием; выбранный стоит в списке сессий вместо знака хаба. Знаки хранятся в этом браузере (localStorage). Места:
 // session.header (кнопка и выбор) и sidebar.session (метка, по которой знак встаёт на место в строке; сама метка не видна).
 //
+// Эмодзи сессии — у ядра (v1.1: свой значок, событие session.iconed, POST /api/session/icon): выбор в шапке пишется
+// туда же, виден везде (Telegram, другая машина, другой браузер), а в списке и шапке рисуется значок ядра. Здесь
+// остаются символы SF/Segoe, цвет и прыжок — ядру они не известны. Символ помнит эмодзи ядра, при котором выбран:
+// значок в ядре сменили позже — символ уступает ему (побеждает новее). Локальный эмодзи прежних версий один раз
+// уходит в ядро, если там у сессии своего значка ещё нет.
+//
 // Строку списка и шапку хаб собирает заново на каждом снимке, а root места живёт между снимками: поэтому знак ставим
 // после сборки (requestAnimationFrame — до отрисовки, мерцания нет): в строке — вместо знака у имени, в шапке — кнопка
 // переезжает перед названием.
@@ -14,11 +20,12 @@
 // шрифта — на Mac SF Symbols (шрифт SF Pro), на Windows Segoe Fluent Icons (MDL2 на Windows 10); шрифта нет — стиль
 // «Символы» неактивен. Символ без своего выбора — по эмодзи сессии (🎨 → палитра), иначе знак её роли. Стиль, цвет
 // символов (свой или случайный — постоянный для сессии) и прыжок — блоком во вкладке «Настройки» (API 1.13; на старом
-// хабе — своя вкладка «Иконки»). У сессии хранятся оба знака: { emoji, sym } — смена стиля их не теряет.
+// хабе — своя вкладка «Иконки»).
 const KEY = "hub.directionIcons";
 const SET = "hub.directionIcons.settings";
 const COMPASS = { sf: "100dcc", win: "e812" };   // компас направления в стиле «Символы»: location.north.circle / MapCompassTop
 const ROLE = { agent: ["🤖", "person"], direction: ["🧭", null], other: ["", "hammer"], hub: ["", "house"] };   // знак хаба и символ роли
+const HUB_EMOJI = "🧠";   // значок хаба в ядре, пока своего нет
 const HOP = 1600;   // мс: один прыжок и пауза — как длительность анимации di-hop в style.css
 const FONTS = {
   sf: '"SF Pro", "SF Pro Text", "SF Pro Display", "SF Compact"',
@@ -42,23 +49,27 @@ const BY_EMOJI = {
   "☕": "cup.and.saucer", "🍕": "fork.knife", "🍩": "fork.knife", "🍎": "fork.knife", "🧁": "fork.knife", "🎁": "gift",
   "🏆": "trophy", "💎": "crown", "❤": "heart", "💜": "heart", "💙": "heart", "💚": "heart",
 };
-let hub = null, groups = null, symbols = null, openFor = null, font;
+let hub = null, asked = new Set(), groups = null, symbols = null, openFor = null, font;
 
 const readJSON = (key) => { try { const v = JSON.parse(localStorage.getItem(key) || "{}"); return v && typeof v === "object" ? v : {}; } catch { return {}; } };
 const writeJSON = (key, v) => { try { localStorage.setItem(key, JSON.stringify(v)); } catch { /* нет хранилища */ } };
 const icons = () => readJSON(KEY);
-// знак сессии: строка (до 1.3) — эмодзи; { sym, color } (1.2) — символ, его цвет теперь общий из настроек
-function entry(name) {
+// что хранится у сессии здесь: sym — символ, for — эмодзи ядра, при котором он выбран; emoji (до 1.7) — только для
+// переезда в ядро. Строка (до 1.3) — эмодзи
+function stored(name) {
   const v = icons()[name];
   if (typeof v === "string") return { emoji: v };
-  return v && typeof v === "object" ? { emoji: typeof v.emoji === "string" ? v.emoji : "", sym: typeof v.sym === "string" ? v.sym : "" } : {};
+  return v && typeof v === "object" ? { emoji: typeof v.emoji === "string" ? v.emoji : "", sym: typeof v.sym === "string" ? v.sym : "",
+    for: typeof v.for === "string" ? v.for : "" } : {};
 }
+// символ сессии, если он ещё в силе: значок в ядре сменили после выбора — побеждает ядро (base — значок ядра сейчас)
+const symOf = (name, base) => { const e = stored(name); return e.sym && (!e.for || e.for === base) ? e.sym : ""; };
 
 // общие настройки; до 1.3 их не было — у кого уже стоят символы, тому стиль «Символы»
 function settings() {
   const s = readJSON(SET);
   return {
-    style: s.style === "sym" || s.style === "emoji" ? s.style : Object.keys(icons()).some((n) => entry(n).sym) ? "sym" : "emoji",
+    style: s.style === "sym" || s.style === "emoji" ? s.style : Object.keys(icons()).some((n) => stored(n).sym) ? "sym" : "emoji",
     color: typeof s.color === "string" ? s.color : "",
     hop: s.hop !== false,
   };
@@ -97,11 +108,11 @@ function colorOf(name) {
   return COLORS[h % COLORS.length];   // случайный, но постоянный: от имени сессии
 }
 
-// что рисовать: { emoji } или { code } (символ); base — эмодзи хаба у сессии (s.icon или знак роли)
+// что рисовать: { emoji } или { code } (символ); base — значок сессии в ядре (s.icon, свой или прежний) или знак роли
 function look(name, kind, base) {
-  const e = editable(kind) ? entry(name) : {}, emoji = e.emoji || base || ROLE[kind][0];
-  if (!symbolStyle()) return { emoji };
-  const code = (e.sym && codeOf(e.sym)) || codeOf(BY_EMOJI[emoji.replace(/️/g, "")])
+  const emoji = base || ROLE[kind][0], sym = editable(kind) ? symOf(name, base) : "";
+  if (!symbolStyle()) return { emoji: emoji || (kind === "hub" ? HUB_EMOJI : "") };
+  const code = (sym && codeOf(sym)) || codeOf(BY_EMOJI[emoji.replace(/️/g, "")])
     || (kind === "direction" ? COMPASS[symbolFont()] : codeOf(ROLE[kind][1]));
   return code ? { code } : { emoji };
 }
@@ -120,14 +131,21 @@ function paintButton(btn, name, kind, base) {
   if (!btn.textContent) btn.textContent = "+";
 }
 
-// знак в текущем стиле: эмодзи — e.emoji, символ — e.sym; второй остаётся
-function save(name, patch) {
-  const all = icons(), e = { ...entry(name), ...patch };
-  for (const k of Object.keys(e)) if (!e[k]) delete e[k];
-  if (Object.keys(e).length) all[name] = e; else delete all[name];
+// символ — здесь (вместе с эмодзи ядра, при котором выбран); пусто — вернуть «как было»
+function saveSym(name, sym, base) {
+  const all = icons();
+  if (sym) all[name] = { sym, for: base }; else delete all[name];
   writeJSON(KEY, all);
   openFor = null;
   repaint();
+}
+
+// эмодзи — в ядро: оно пишет session.iconed, снимок приходит всем клиентам; пусто — вернуть значок по умолчанию
+async function saveEmoji(name, emoji) {
+  openFor = null;
+  repaint();
+  const r = await hub.post("/api/session/icon", { session: name, icon: emoji || "" });
+  if (r.error) window.alert(r.error);
 }
 
 // перерисовка страницы список обновляет, шапку открытой сессии — нет: кнопку и выбор обновляем сами
@@ -184,13 +202,14 @@ function renderRow(root, snap, { session }) {
   root.dataset.name = session.name;
   root.dataset.kind = kind;
   root.dataset.base = session.icon || ROLE[kind][0];
-  if (symbolStyle() || (editable(kind) && entry(session.name).emoji)) root.dataset.icon = "1"; else delete root.dataset.icon;
+  if (symbolStyle()) root.dataset.icon = "1"; else delete root.dataset.icon;   // эмодзи — значок ядра, строку не трогаем
+  migrate(snap);
   requestAnimationFrame(() => paintRow(root));
 }
 
 // ───── шапка специалиста или направления: кнопка и выбор знака в текущем стиле ─────
 function popover(name, kind, base) {
-  const e = entry(name), sym = symbolStyle(), cur = look(name, kind, base);
+  const sym = symbolStyle(), cur = look(name, kind, base);
   const pop = hub.el("div", "di-pop");
   pop.setAttribute("role", "dialog");
   pop.setAttribute("aria-label", "Иконка");
@@ -200,20 +219,20 @@ function popover(name, kind, base) {
     pop.append(hub.el("div", "di-title", g.title));
     const grid = hub.el("div", "di-grid");
     for (const s of list) {
-      const b = sym ? button("di-opt di-sym", glyph(s[symbolFont()]), () => save(name, { sym: s.n }))
-        : button("di-opt", s, () => save(name, { emoji: s }));
+      const b = sym ? button("di-opt di-sym", glyph(s[symbolFont()]), () => saveSym(name, s.n, base))
+        : button("di-opt", s, () => saveEmoji(name, s));
       if (sym) { b.style.fontFamily = FONTS[symbolFont()]; b.style.color = colorOf(name); b.title = s.n; }
-      b.setAttribute("aria-pressed", String(sym ? cur.code === s[symbolFont()] : e.emoji === s));
+      b.setAttribute("aria-pressed", String(sym ? cur.code === s[symbolFont()] : cur.emoji === s));
       grid.append(b);
     }
     pop.append(grid);
   }
   const foot = hub.el("div", "di-foot");
   if (!sym) foot.append(button("btn quiet di-own", "Свой знак…", () => {
-    const v = (window.prompt("Эмодзи", e.emoji || "") || "").trim();
-    if (v) save(name, { emoji: [...v].slice(0, 2).join("") });   // один знак, иногда из двух символов (флаг, составной)
+    const v = (window.prompt("Эмодзи", cur.emoji || "") || "").trim();
+    if (v) saveEmoji(name, [...v].slice(0, 2).join(""));   // один знак, иногда из двух символов (флаг, составной); ядро проверит
   }));
-  foot.append(button("btn quiet di-own", "Как было", () => save(name, sym ? { sym: "" } : { emoji: "" })));
+  foot.append(button("btn quiet di-own", "Как было", () => (sym ? saveSym(name, "", base) : saveEmoji(name, ""))));
   pop.append(foot, hub.el("div", "di-hint", `Стиль, цвет и прыжок — «Настройки» → «${inTheme() ? "Тема" : "Иконки"}»`));
   return pop;
 }
@@ -250,6 +269,34 @@ function sync(root) {
   root.querySelector(".di-btn")?.setAttribute("aria-expanded", String(openFor === name));
   if (openFor === name && !pop) root.append(popover(name, root.dataset.kind, root.dataset.base));
   else if (openFor !== name && pop) pop.remove();
+}
+
+// ───── переезд: эмодзи прежних версий (были только в этом браузере) — в ядро ─────
+// Сессия есть в снимке и своего значка в ядре у неё нет — отправить; есть — ядро новее, локальный эмодзи просто убрать.
+// Нет в снимке (другая машина, удалена) — оставить до встречи. Отказ ядра — не повторять до перезагрузки страницы.
+let migrated = null;
+function migrate(snap) {
+  if (migrated === snap || !(snap?.sessions || []).some((s) => "own_icon" in s)) return;   // старый хаб без значков ядра — нечего
+  migrated = snap;
+  const all = icons();
+  let changed = false;
+  for (const s of snap.sessions || []) {
+    const e = stored(s.name);
+    if (!e.emoji || asked.has(s.name)) continue;
+    if (s.own_icon || e.emoji === s.icon) { drop(all, s.name, s.icon); changed = true; continue; }
+    asked.add(s.name);
+    hub.post("/api/session/icon", { session: s.name, icon: e.emoji }).then((r) => {
+      if (r.error) return;
+      const now = icons();
+      drop(now, s.name, e.emoji);
+      writeJSON(KEY, now);
+    });
+  }
+  if (changed) writeJSON(KEY, all);
+}
+function drop(all, name, base) {   // убрать локальный эмодзи; символ (если есть) остаётся при значке ядра base
+  const e = stored(name);
+  if (e.sym) all[name] = { sym: e.sym, for: e.for || base }; else delete all[name];
 }
 
 // ───── настройки: стиль, цвет символов, прыжок ─────
