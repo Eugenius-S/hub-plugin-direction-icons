@@ -1,38 +1,108 @@
-// «Иконки»: свой знак у направлений и специалистов — выбор в шапке открытой сессии, слева перед
-// названием; выбранный стоит в списке сессий вместо знака хаба. Знаки хранятся в этом браузере (localStorage). Места:
-// session.header (кнопка и выбор) и sidebar.session (метка, по которой знак встаёт на место в строке; сама метка не видна).
+// "Icons": a sign of its own for directions and specialists. It is picked in the header of the open session, to the left
+// of the title; the chosen one stands in the session list in place of the hub's sign. Signs are kept in this browser
+// (localStorage). Slots: session.header (the button and the picker) and sidebar.session (a mark by which the sign takes
+// its place in the row; the mark itself is invisible).
 //
-// Эмодзи сессии — у ядра (v1.1: свой значок, событие session.iconed, POST /api/session/icon): выбор в шапке пишется
-// туда же, виден везде (Telegram, другая машина, другой браузер), а в списке и шапке рисуется значок ядра. Здесь
-// остаются символы SF/Segoe, цвет и прыжок — ядру они не известны. Символ помнит эмодзи ядра, при котором выбран:
-// значок в ядре сменили позже — символ уступает ему (побеждает новее). Локальный эмодзи прежних версий один раз
-// уходит в ядро, если там у сессии своего значка ещё нет.
+// The session emoji belongs to the core (v1.1: its own icon, event session.iconed, POST /api/session/icon): a pick in the
+// header is written there, is seen everywhere (Telegram, another machine, another browser), and the list and header draw
+// the core icon. What stays here: SF/Segoe symbols, color and hop; the core knows nothing about them. A symbol remembers
+// the core emoji it was picked at: if the core icon changed later, the symbol yields to it (the newer wins). A local emoji
+// from older versions moves to the core once, if the session has no icon of its own there yet.
 //
-// Строку списка и шапку хаб собирает заново на каждом снимке, а root места живёт между снимками: поэтому знак ставим
-// после сборки (requestAnimationFrame — до отрисовки, мерцания нет): в строке — вместо знака у имени, в шапке — кнопка
-// переезжает перед названием.
+// The hub rebuilds the list row and the header on every snapshot, while the slot root lives between snapshots, so the
+// sign is placed after the rebuild (requestAnimationFrame: before paint, no flicker): in a row, in place of the sign by the
+// name; in the header, the button moves in front of the title.
 //
-// Итог хода пришёл, а владелец его ещё не открыл (строка «unread») — знак сессии (направления, специалиста, исполнителя)
-// плавно подпрыгивает на 5 px, как значок в доке Mac. Строку пересобирают на каждом снимке — фазу
-// прыжка берём от часов страницы, чтобы новый узел продолжал движение, а не начинал заново.
+// A turn result has arrived and the owner has not opened it yet (the row has "unread"): the session sign (direction,
+// specialist, worker) smoothly hops by 5 px, like an icon in the Mac dock. The row is rebuilt on every snapshot, so the hop
+// phase is taken from the page clock: a new node continues the motion instead of starting over.
 //
-// Стиль — на все знаки списка: специалисты, направления, исполнители. Эмодзи или символ системного
-// шрифта — на Mac SF Symbols (шрифт SF Pro), на Windows Segoe Fluent Icons (MDL2 на Windows 10); шрифта нет — стиль
-// «Символы» неактивен. Символ без своего выбора — по эмодзи сессии (🎨 → палитра), иначе знак её роли. Стиль, цвет
-// символов (свой или случайный — постоянный для сессии) и прыжок — блоком во вкладке «Настройки» (API 1.13; на старом
-// хабе — своя вкладка «Иконки»).
+// Style, for all signs of the list: specialists, directions, workers. Emoji or a symbol of the system font: SF Symbols on
+// Mac (the SF Pro font), Segoe Fluent Icons on Windows (MDL2 on Windows 10); with no font the "Symbols" style is inactive.
+// A symbol with no choice of its own follows the session emoji (a palette for the artist emoji), otherwise the sign of its
+// role. Style, symbol color (its own or random, stable per session) and hop: a block in the Settings tab (API 1.13; on an
+// old hub, a tab of its own, "Icons").
+//
+// UI strings: en by default, ru when the hub language is Russian; the language is picked at use time by hub.lang.
+const STR = {
+  en: {
+    icons: "Icons",
+    icons_hint: "Session list signs: style, symbol color, hop",
+    icon: "Icon",
+    icon_pick: "Choose icon",
+    own_emoji: "Custom sign…",
+    emoji_prompt: "Emoji",
+    reset: "Reset",
+    foot_hint: "Style, color and hop — Settings → {tab}",
+    tab_look: "Look",
+    tab_icons: "Icons",
+    style_emoji: "Emoji",
+    style_sym: "Symbols",
+    set_style: "Style — for all signs of the list",
+    hint_sym: "Symbols — {font}. The sign of the hub, a specialist or a direction is set with the button to the left of the title in its header.",
+    font_sf: "SF Symbols (SF Pro font)",
+    font_win: "Segoe Fluent Icons",
+    hint_nofont: "No symbols: needs the SF Pro font (Mac, developer.apple.com/fonts) or Segoe Fluent Icons (Windows).",
+    rnd_title: "Random: its own for each session",
+    own_color: "Custom color",
+    set_color: "Symbol color",
+    set_hop: "Hop",
+    hop_label: "The icon hops while the result is unread",
+    hop_hint: "Like an icon in the Mac dock: a direction or specialist finished its turn and you have not opened it yet",
+    groups: {},
+  },
+  ru: {
+    icons: "Иконки",
+    icons_hint: "Знаки списка сессий: стиль, цвет символов, прыжок",
+    icon: "Иконка",
+    icon_pick: "Иконка — выбрать",
+    own_emoji: "Свой знак…",
+    emoji_prompt: "Эмодзи",
+    reset: "Как было",
+    foot_hint: "Стиль, цвет и прыжок — «Настройки» → «{tab}»",
+    tab_look: "Тема",
+    tab_icons: "Иконки",
+    style_emoji: "Эмодзи",
+    style_sym: "Символы",
+    set_style: "Стиль — для всех знаков списка",
+    hint_sym: "Символы — {font}. Знак хаба, специалиста или направления — кнопкой слева от названия в его шапке.",
+    font_sf: "SF Symbols (шрифт SF Pro)",
+    font_win: "Segoe Fluent Icons",
+    hint_nofont: "Символов нет: нужен шрифт SF Pro (Mac, developer.apple.com/fonts) или Segoe Fluent Icons (Windows).",
+    rnd_title: "Случайный: свой у каждой сессии",
+    own_color: "Свой цвет",
+    set_color: "Цвет символов",
+    set_hop: "Прыжок",
+    hop_label: "Иконка прыгает, пока итог не прочитан",
+    hop_hint: "Как значок в доке Mac: направление или специалист закончили ход, а вы его ещё не открыли",
+    // titles of the groups in emoji.json and symbols.json (English there)
+    groups: {
+      "Directions": "Направления", "Work": "Работа", "Creative": "Творчество", "Tech": "Технологии",
+      "Nature and animals": "Природа и животные", "Food and misc": "Еда и разное",
+      "Create": "Создание", "Code": "Код", "Data": "Данные", "People": "Люди", "Money": "Деньги", "World": "Мир",
+    },
+  },
+};
+// hub is set in register(); hub.lang is read on every call, never at module load
+const lang = () => (STR[hub?.lang] ? hub.lang : "en");
+const t = (k, v) => {
+  let r = STR[lang()][k] ?? STR.en[k] ?? k;
+  for (const n in v) r = r.replaceAll(`{${n}}`, v[n]);
+  return r;
+};
+const groupTitle = (g) => STR[lang()].groups[g.title] ?? g.title;
 const KEY = "hub.directionIcons";
 const SET = "hub.directionIcons.settings";
-const COMPASS = { sf: "100dcc", win: "e812" };   // компас направления в стиле «Символы»: location.north.circle / MapCompassTop
-const ROLE = { agent: ["🤖", "person"], direction: ["🧭", null], other: ["", "hammer"], hub: ["", "house"] };   // знак хаба и символ роли
-const HUB_EMOJI = "🧠";   // значок хаба в ядре, пока своего нет
-const HOP = 1600;   // мс: один прыжок и пауза — как длительность анимации di-hop в style.css
+const COMPASS = { sf: "100dcc", win: "e812" };   // direction compass in the "Symbols" style: location.north.circle / MapCompassTop
+const ROLE = { agent: ["🤖", "person"], direction: ["🧭", null], other: ["", "hammer"], hub: ["", "house"] };   // the hub sign and the role symbol
+const HUB_EMOJI = "🧠";   // the hub icon in the core until it has its own
+const HOP = 1600;   // ms: one hop and a pause, same as the di-hop animation duration in style.css
 const FONTS = {
   sf: '"SF Pro", "SF Pro Text", "SF Pro Display", "SF Compact"',
   win: '"Segoe Fluent Icons", "Segoe MDL2 Assets"',
 };
 const COLORS = ["#e5484d", "#f76b15", "#ffb224", "#30a46c", "#12a594", "#0090ff", "#3e63dd", "#8e4ec6", "#d6409f", "#8d8d86"];
-// эмодзи сессии → символ того же смысла (знаки хаба у специалистов и набор emoji.json)
+// session emoji -> a symbol of the same meaning (hub signs of specialists and the emoji.json set)
 const BY_EMOJI = {
   "🎯": "target", "🚀": "airplane", "🛰": "globe", "🗺": "map", "📍": "location", "🏁": "flag", "🌍": "globe", "🔭": "binoculars",
   "🧩": "puzzlepiece", "🏗": "hammer", "⚙": "gearshape", "🛠": "hammer", "🧪": "atom", "📦": "shippingbox", "📝": "doc.text",
@@ -52,20 +122,20 @@ const BY_EMOJI = {
 let hub = null, asked = new Set(), groups = null, symbols = null, openFor = null, font;
 
 const readJSON = (key) => { try { const v = JSON.parse(localStorage.getItem(key) || "{}"); return v && typeof v === "object" ? v : {}; } catch { return {}; } };
-const writeJSON = (key, v) => { try { localStorage.setItem(key, JSON.stringify(v)); } catch { /* нет хранилища */ } };
+const writeJSON = (key, v) => { try { localStorage.setItem(key, JSON.stringify(v)); } catch { /* no storage */ } };
 const icons = () => readJSON(KEY);
-// что хранится у сессии здесь: sym — символ, for — эмодзи ядра, при котором он выбран; emoji (до 1.7) — только для
-// переезда в ядро. Строка (до 1.3) — эмодзи
+// what is kept here per session: sym is the symbol, for is the core emoji it was picked at; emoji (before 1.7) is only
+// for moving to the core. A plain string (before 1.3) is an emoji
 function stored(name) {
   const v = icons()[name];
   if (typeof v === "string") return { emoji: v };
   return v && typeof v === "object" ? { emoji: typeof v.emoji === "string" ? v.emoji : "", sym: typeof v.sym === "string" ? v.sym : "",
     for: typeof v.for === "string" ? v.for : "" } : {};
 }
-// символ сессии, если он ещё в силе: значок в ядре сменили после выбора — побеждает ядро (base — значок ядра сейчас)
+// the session symbol if it still holds: if the core icon changed after the pick, the core wins (base is the core icon now)
 const symOf = (name, base) => { const e = stored(name); return e.sym && (!e.for || e.for === base) ? e.sym : ""; };
 
-// общие настройки; до 1.3 их не было — у кого уже стоят символы, тому стиль «Символы»
+// shared settings; before 1.3 there were none, so whoever already has symbols gets the "Symbols" style
 function settings() {
   const s = readJSON(SET);
   return {
@@ -79,10 +149,10 @@ function setSettings(patch) {
   repaint();
 }
 
-// шрифт символов этой машины: глиф шрифта шире/уже запасного — шрифт есть (ширина у двух запасных разная — без совпадений)
+// the symbol font of this machine: a glyph wider/narrower than the fallback means the font exists (the two fallbacks differ in width, so no coincidences)
 function symbolFont() {
   if (font !== undefined) return font;
-  const probe = { sf: "\u{100215}", win: "" };   // папка: SF Symbols folder, Segoe Folder
+  const probe = { sf: "\u{100215}", win: "" };   // folder: SF Symbols folder, Segoe Folder
   const ctx = document.createElement("canvas").getContext("2d");
   const width = (fam, ch) => { ctx.font = `32px ${fam}`; return ctx.measureText(ch).width; };
   font = null;
@@ -93,10 +163,10 @@ function symbolFont() {
 }
 const symbolStyle = () => settings().style === "sym" && !!symbolFont() && !!symbols;
 
-// кто сессия: хаб, специалист, направление или остальные (исполнители, обычные)
+// who the session is: the hub, a specialist, a direction or the rest (workers, ordinary ones)
 const isDirection = (s, snap) => !!s && s.kind !== "hub" && s.role !== "agent" && (!!s.backlog || (snap?.directions || []).includes(s.name));
 const kindOf = (s, snap) => (!s ? null : s.kind === "hub" ? "hub" : s.role === "agent" ? "agent" : isDirection(s, snap) ? "direction" : "other");
-const editable = (kind) => kind === "agent" || kind === "direction" || kind === "hub";   // знак меняют у хаба, специалистов и направлений
+const editable = (kind) => kind === "agent" || kind === "direction" || kind === "hub";   // the sign can be changed for the hub, specialists and directions
 
 const glyph = (code) => String.fromCodePoint(parseInt(code, 16));
 const codeOf = (sym) => { for (const g of symbols || []) for (const s of g.icons) if (s.n === sym) return s[symbolFont()] || null; return null; };
@@ -105,10 +175,10 @@ function colorOf(name) {
   if (c) return c;
   let h = 0;
   for (const ch of name) h = (h * 31 + ch.codePointAt(0)) >>> 0;
-  return COLORS[h % COLORS.length];   // случайный, но постоянный: от имени сессии
+  return COLORS[h % COLORS.length];   // random but stable: derived from the session name
 }
 
-// что рисовать: { emoji } или { code } (символ); base — значок сессии в ядре (s.icon, свой или прежний) или знак роли
+// what to draw: { emoji } or { code } (a symbol); base is the session icon in the core (s.icon, its own or the old one) or the role sign
 function look(name, kind, base) {
   const emoji = base || ROLE[kind][0], sym = editable(kind) ? symOf(name, base) : "";
   if (!symbolStyle()) return { emoji: emoji || (kind === "hub" ? HUB_EMOJI : "") };
@@ -127,11 +197,11 @@ function paintIcon(node, name, kind, base) {
 
 function paintButton(btn, name, kind, base) {
   paintIcon(btn, name, kind, base);
-  btn.classList.toggle("di-empty", !btn.textContent);   // у хаба эмодзи по умолчанию нет — кнопка всё равно видна
+  btn.classList.toggle("di-empty", !btn.textContent);   // the hub has no default emoji, the button is visible anyway
   if (!btn.textContent) btn.textContent = "+";
 }
 
-// символ — здесь (вместе с эмодзи ядра, при котором выбран); пусто — вернуть «как было»
+// the symbol is kept here (with the core emoji it was picked at); empty means back to default
 function saveSym(name, sym, base) {
   const all = icons();
   if (sym) all[name] = { sym, for: base }; else delete all[name];
@@ -140,7 +210,7 @@ function saveSym(name, sym, base) {
   repaint();
 }
 
-// эмодзи — в ядро: оно пишет session.iconed, снимок приходит всем клиентам; пусто — вернуть значок по умолчанию
+// the emoji goes to the core: it writes session.iconed and the snapshot reaches all clients; empty means the default icon
 async function saveEmoji(name, emoji) {
   openFor = null;
   repaint();
@@ -148,7 +218,7 @@ async function saveEmoji(name, emoji) {
   if (r.error) window.alert(r.error);
 }
 
-// перерисовка страницы список обновляет, шапку открытой сессии — нет: кнопку и выбор обновляем сами
+// a page redraw updates the list but not the header of the open session: the button and the picker are updated here
 function repaint() {
   for (const r of document.querySelectorAll(".di-slot")) if (r.dataset.name) {
     paintButton(r.querySelector(".di-btn"), r.dataset.name, r.dataset.kind, r.dataset.base);
@@ -173,23 +243,23 @@ function button(cls, text, onClick) {
   return b;
 }
 
-// ───── список сессий: свой знак и стиль ─────
+// ───── session list: own sign and style ─────
 function paintRow(root) {
   const row = root.closest(".srow"), { kind, name } = root.dataset;
   let av = row?.querySelector(".nm .avatar");
-  if (!av && kind === "hub" && root.dataset.icon) {   // у строки «Хаб» своего знака нет — ставим
+  if (!av && kind === "hub" && root.dataset.icon) {   // the "Hub" row has no sign of its own, so we put one
     av = hub.el("span", "avatar");
     row.querySelector(".nm")?.prepend(av, document.createTextNode(" "));
   }
-  if (!av) return;   // у сессии нет знака (исполнитель без значка) — нечего менять
+  if (!av) return;   // the session has no sign (a worker without an icon): nothing to change
   if (root.dataset.icon) {
-    av.className = "avatar";   // не знак темы (kit-img): картинкой он не станет
+    av.className = "avatar";   // not a theme sign (kit-img): it will not become a picture
     av.style.backgroundImage = "";
     av.removeAttribute("role");
     av.removeAttribute("aria-label");
     paintIcon(av, name, kind, root.dataset.base);
   }
-  // прыгает, пока итог не прочитан: метку «unread» строке ставит хаб (у открытой сейчас сессии её нет)
+  // hops while the result is unread: the hub puts the "unread" mark on the row (the session open now does not have it)
   const on = row.classList.contains("unread") && settings().hop;
   av.classList.toggle("di-hop", on);
   av.style.animationDelay = on ? `-${Math.round(performance.now() % HOP)}ms` : "";
@@ -202,21 +272,21 @@ function renderRow(root, snap, { session }) {
   root.dataset.name = session.name;
   root.dataset.kind = kind;
   root.dataset.base = session.icon || ROLE[kind][0];
-  if (symbolStyle()) root.dataset.icon = "1"; else delete root.dataset.icon;   // эмодзи — значок ядра, строку не трогаем
+  if (symbolStyle()) root.dataset.icon = "1"; else delete root.dataset.icon;   // an emoji is the core icon, the row is left alone
   migrate(snap);
   requestAnimationFrame(() => paintRow(root));
 }
 
-// ───── шапка специалиста или направления: кнопка и выбор знака в текущем стиле ─────
+// ───── header of a specialist or direction: the button and the sign picker in the current style ─────
 function popover(name, kind, base) {
   const sym = symbolStyle(), cur = look(name, kind, base);
   const pop = hub.el("div", "di-pop");
   pop.setAttribute("role", "dialog");
-  pop.setAttribute("aria-label", "Иконка");
+  pop.setAttribute("aria-label", t("icon"));
   for (const g of (sym ? symbols : groups) || []) {
     const list = sym ? g.icons.filter((s) => s[symbolFont()]) : g.icons;
     if (!list.length) continue;
-    pop.append(hub.el("div", "di-title", g.title));
+    pop.append(hub.el("div", "di-title", groupTitle(g)));
     const grid = hub.el("div", "di-grid");
     for (const s of list) {
       const b = sym ? button("di-opt di-sym", glyph(s[symbolFont()]), () => saveSym(name, s.n, base))
@@ -228,12 +298,12 @@ function popover(name, kind, base) {
     pop.append(grid);
   }
   const foot = hub.el("div", "di-foot");
-  if (!sym) foot.append(button("btn quiet di-own", "Свой знак…", () => {
-    const v = (window.prompt("Эмодзи", cur.emoji || "") || "").trim();
-    if (v) saveEmoji(name, [...v].slice(0, 2).join(""));   // один знак, иногда из двух символов (флаг, составной); ядро проверит
+  if (!sym) foot.append(button("btn quiet di-own", t("own_emoji"), () => {
+    const v = (window.prompt(t("emoji_prompt"), cur.emoji || "") || "").trim();
+    if (v) saveEmoji(name, [...v].slice(0, 2).join(""));   // one sign, sometimes of two characters (a flag, a composite); the core will check
   }));
-  foot.append(button("btn quiet di-own", "Как было", () => (sym ? saveSym(name, "", base) : saveEmoji(name, ""))));
-  pop.append(foot, hub.el("div", "di-hint", `Стиль, цвет и прыжок — «Настройки» → «${inTheme() ? "Тема" : "Иконки"}»`));
+  foot.append(button("btn quiet di-own", t("reset"), () => (sym ? saveSym(name, "", base) : saveEmoji(name, ""))));
+  pop.append(foot, hub.el("div", "di-hint", t("foot_hint", { tab: t(inTheme() ? "tab_look" : "tab_icons") })));
   return pop;
 }
 
@@ -256,9 +326,9 @@ function renderHead(root, snap, { session }) {
   if (root.dataset.name !== name) root.querySelector(".di-pop")?.remove();
   Object.assign(root.dataset, { name, kind, base: session.icon || ROLE[kind][0] });
   paintButton(btn, name, kind, root.dataset.base);
-  btn.title = "Иконка — выбрать";
+  btn.title = t("icon_pick");
   sync(root);
-  requestAnimationFrame(() => {   // слева, перед названием, а не у правого края
+  requestAnimationFrame(() => {   // on the left, before the title, not at the right edge
     const title = root.parentElement?.querySelector(":scope > h2");
     if (title && title.previousElementSibling !== root) title.before(root);
   });
@@ -271,12 +341,13 @@ function sync(root) {
   else if (openFor !== name && pop) pop.remove();
 }
 
-// ───── переезд: эмодзи прежних версий (были только в этом браузере) — в ядро ─────
-// Сессия есть в снимке и своего значка в ядре у неё нет — отправить; есть — ядро новее, локальный эмодзи просто убрать.
-// Нет в снимке (другая машина, удалена) — оставить до встречи. Отказ ядра — не повторять до перезагрузки страницы.
+// ───── move: emoji of older versions (kept only in this browser) go to the core ─────
+// The session is in the snapshot and has no icon of its own in the core: send it; it has one: the core is newer, just drop
+// the local emoji. Not in the snapshot (another machine, deleted): keep until we meet it. A core refusal is not repeated
+// until the page is reloaded.
 let migrated = null;
 function migrate(snap) {
-  if (migrated === snap || !(snap?.sessions || []).some((s) => "own_icon" in s)) return;   // старый хаб без значков ядра — нечего
+  if (migrated === snap || !(snap?.sessions || []).some((s) => "own_icon" in s)) return;   // an old hub without core icons: nothing to do
   migrated = snap;
   const all = icons();
   let changed = false;
@@ -294,31 +365,30 @@ function migrate(snap) {
   }
   if (changed) writeJSON(KEY, all);
 }
-function drop(all, name, base) {   // убрать локальный эмодзи; символ (если есть) остаётся при значке ядра base
+function drop(all, name, base) {   // drop the local emoji; the symbol (if any) stays with the core icon base
   const e = stored(name);
   if (e.sym) all[name] = { sym: e.sym, for: e.for || base }; else delete all[name];
 }
 
-// ───── настройки: стиль, цвет символов, прыжок ─────
+// ───── settings: style, symbol color, hop ─────
 let settingsRoot = null;
 
 function paintSettings(root) {
   settingsRoot = root;
   const s = settings(), f = symbolFont();
   const style = hub.el("div", "seg");
-  for (const [id, label] of [["emoji", "Эмодзи"], ["sym", "Символы"]]) {
+  for (const [id, label] of [["emoji", t("style_emoji")], ["sym", t("style_sym")]]) {
     const b = button(null, label, () => setSettings({ style: id }));
     b.setAttribute("aria-pressed", String(id === "sym" ? symbolStyle() : !symbolStyle()));
     if (id === "sym" && !f) b.disabled = true;
     style.append(b);
   }
-  const rows = [hub.el("div", "di-set-title", "Стиль — для всех знаков списка"), style,
-    hub.el("p", "hint", f ? `Символы — ${f === "sf" ? "SF Symbols (шрифт SF Pro)" : "Segoe Fluent Icons"}. Знак хаба, специалиста или направления — кнопкой слева от названия в его шапке.`
-      : "Символов нет: нужен шрифт SF Pro (Mac, developer.apple.com/fonts) или Segoe Fluent Icons (Windows).")];
+  const rows = [hub.el("div", "di-set-title", t("set_style")), style,
+    hub.el("p", "hint", f ? t("hint_sym", { font: t(f === "sf" ? "font_sf" : "font_win") }) : t("hint_nofont"))];
   if (symbolStyle()) {
     const colors = hub.el("div", "di-colors");
     const rnd = button("di-swatch di-rnd", "", () => setSettings({ color: "" }));
-    rnd.title = "Случайный: свой у каждой сессии";
+    rnd.title = t("rnd_title");
     rnd.setAttribute("aria-pressed", String(!s.color));
     colors.append(rnd);
     for (const c of COLORS) {
@@ -334,11 +404,11 @@ function paintSettings(root) {
     pick.value = mine ? s.color : "#888888";
     pick.addEventListener("change", () => setSettings({ color: pick.value }));
     const own = button("di-swatch di-own-color", mine ? "" : "+", () => pick.click());
-    own.title = "Свой цвет";
+    own.title = t("own_color");
     if (mine) own.style.background = s.color;
     own.setAttribute("aria-pressed", String(mine));
     colors.append(own, pick);
-    rows.push(hub.el("div", "di-set-title", "Цвет символов"), colors);
+    rows.push(hub.el("div", "di-set-title", t("set_color")), colors);
   }
   const hop = hub.el("label", "opt");
   const box = hub.el("input");
@@ -346,16 +416,16 @@ function paintSettings(root) {
   box.checked = s.hop;
   box.addEventListener("change", () => setSettings({ hop: box.checked }));
   const txt = hub.el("span");
-  txt.append(document.createTextNode("Иконка прыгает, пока итог не прочитан"),
-    hub.el("small", null, "Как значок в доке Mac: направление или специалист закончили ход, а вы его ещё не открыли"));
+  txt.append(document.createTextNode(t("hop_label")),
+    hub.el("small", null, t("hop_hint")));
   hop.append(box, txt);
-  rows.push(hub.el("div", "di-set-title", "Прыжок"), hop);
+  rows.push(hub.el("div", "di-set-title", t("set_hop")), hop);
   root.classList.add("di-set");
   root.replaceChildren(...rows);
 }
 
-// API 1.14 — блок во вкладке «Тема», 1.13 — в «Настройках» (своя вкладка уезжала на вторую строку);
-// раньше — своя вкладка
+// API 1.14: a block in the "Theme" tab, 1.13: in "Settings" (a tab of its own wrapped to the second line);
+// earlier: a tab of its own
 const api = (minor) => { const [a, b] = String(hub.api || "1.1").split(".").map(Number); return a > 1 || (a === 1 && b >= minor); };
 const blockInSettings = () => api(13), inTheme = () => api(14);
 const drawSettings = (root) => { if (!root.contains(document.activeElement)) paintSettings(root); };
@@ -365,12 +435,12 @@ export default function register(h) {
   hub.addStyle("style.css");
   hub.addSlot("session.header", { id: "pick", order: 5, render: renderHead });
   hub.addSlot("sidebar.session", { id: "mark", render: renderRow });
-  if (blockInSettings()) hub.addOptions({ title: "Иконки", hint: "Знаки списка сессий: стиль, цвет символов, прыжок", tab: "theme", render: drawSettings });
-  else hub.addSettings({ id: "direction-icons", title: "Иконки", render: drawSettings });
-  // символы рисуются после загрузки набора — перерисовать, чтобы встали вместо запасного знака
+  if (blockInSettings()) hub.addOptions({ title: t("icons"), hint: t("icons_hint"), tab: "theme", render: drawSettings });
+  else hub.addSettings({ id: "direction-icons", title: t("icons"), render: drawSettings });
+  // symbols are drawn once the set is loaded: redraw so they replace the fallback sign
   Promise.all([load("emoji.json"), load("symbols.json")]).then(([e, s]) => { groups = e; symbols = s; repaint(); });
-  // клик мимо выбора и Esc закрывают его (путь события: нажатая кнопка к этому моменту может быть уже вне страницы);
-  // другая вкладка поменяла знаки или настройки — перерисовать
+  // a click outside the picker and Esc close it (the event path: the pressed button may already be out of the page by now);
+  // another tab changed signs or settings: redraw
   document.addEventListener("click", (e) => {
     if (openFor && !e.composedPath().some((n) => n.classList?.contains("di-slot"))) { openFor = null; document.querySelectorAll(".di-slot").forEach(sync); }
   });

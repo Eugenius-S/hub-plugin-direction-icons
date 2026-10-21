@@ -1,6 +1,6 @@
 [
  {
-  "title": "Работа",
+  "title": "Work",
   "icons": [
    {
     "n": "folder",
@@ -94,7 +94,7 @@
   ]
  },
  {
-  "title": "Создание",
+  "title": "Create",
   "icons": [
    {
     "n": "paintbrush",
@@ -165,7 +165,7 @@
   ]
  },
  {
-  "title": "Код",
+  "title": "Code",
   "icons": [
    {
     "n": "chevron.left.forwardslash.chevron.right",
@@ -240,7 +240,7 @@
   ]
  },
  {
-  "title": "Данные",
+  "title": "Data",
   "icons": [
    {
     "n": "chart.bar",
@@ -298,7 +298,7 @@
   ]
  },
  {
-  "title": "Люди",
+  "title": "People",
   "icons": [
    {
     "n": "person",
@@ -368,7 +368,7 @@
   ]
  },
  {
-  "title": "Деньги",
+  "title": "Money",
   "icons": [
    {
     "n": "cart",
@@ -423,7 +423,7 @@
   ]
  },
  {
-  "title": "Мир",
+  "title": "World",
   "icons": [
    {
     "n": "leaf",

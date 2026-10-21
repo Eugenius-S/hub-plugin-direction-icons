@@ -1,9 +1,15 @@
 {
   "name": "direction-icons",
   "icon": "icon.png",
-  "description": "У каждой сессии в списке свой значок, его выбирают в чате сессии кнопкой слева от названия: эмодзи — значок сессии в хабе, он виден везде (Telegram, другие устройства). Стиль (эмодзи или системные значки) и цвет меняются в «Настройки» → «Вид» → «Иконки», а значок сессии с непрочитанным итогом подпрыгивает",
-  "why": "Нужную сессию видно с одного взгляда",
-  "version": "1.7.0",
+  "description": "Every session in the list has its own icon, picked in the session chat with the button to the left of the title: an emoji is the session icon in the hub, seen everywhere (Telegram, other devices). The style (emoji or system symbols) and color are changed in Settings → Look → Icons, and the icon of a session with an unread result hops",
+  "why": "You see the session you need at a glance",
+  "version": "1.8.0",
   "hub": "^1.16",
-  "web": "main.js"
+  "web": "main.js",
+  "i18n": {
+    "ru": {
+      "description": "У каждой сессии в списке свой значок, его выбирают в чате сессии кнопкой слева от названия: эмодзи — значок сессии в хабе, он виден везде (Telegram, другие устройства). Стиль (эмодзи или системные значки) и цвет меняются в «Настройки» → «Вид» → «Иконки», а значок сессии с непрочитанным итогом подпрыгивает",
+      "why": "Нужную сессию видно с одного взгляда"
+    }
+  }
 }

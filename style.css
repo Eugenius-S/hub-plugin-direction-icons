@@ -1,8 +1,8 @@
-/* «Иконки направлений»: кнопка в шапке направления и выбор знака. Токены страницы, своих цветов нет. */
+/* "Direction icons": the button in the direction header and the sign picker. Page tokens only, no colors of its own. */
 .di-mark { display: none; }
 .di-slot { position: relative; display: inline-flex; flex: none; }
 .di-slot[hidden] { display: none; }
-/* в шапке хаба v1.1 у названия свой значок с палитрой — наша кнопка его заменяет, выбора не два подряд */
+/* in the hub v1.1 header the title has an icon with a palette of its own; our button replaces it, so there are not two pickers in a row */
 .di-slot:not([hidden]) ~ h2 .head-av { display: none; }
 .di-btn { display: inline-flex; align-items: center; justify-content: center; width: 30px; height: 30px; padding: 0;
   border: 1px solid transparent; border-radius: var(--radius); background: transparent; color: var(--foreground);
@@ -19,7 +19,7 @@
 .di-opt:hover { background: var(--muted); }
 .di-opt[aria-pressed="true"] { border-color: var(--primary); background: color-mix(in srgb, var(--primary) 10%, var(--card)); }
 .di-foot { display: flex; gap: var(--space-2); padding-top: var(--space-2); border-top: 1px solid var(--border); }
-/* итог не прочитан — знак подпрыгивает на 5 px, как в доке Mac; у строки .nm обрезка сверху — место под прыжок */
+/* result unread: the sign hops by 5 px, like in the Mac dock; the .nm row clips at the top, so leave room for the hop */
 .srow .nm:has(.di-hop) { padding-top: 6px; margin-top: -6px; }
 .avatar.di-hop { display: inline-block; animation: di-hop 1600ms infinite; }
 @keyframes di-hop {
@@ -28,7 +28,7 @@
   36%, 100% { transform: translateY(0); }
 }
 @media (prefers-reduced-motion: reduce) { .avatar.di-hop { animation: none; } }
-/* стиль знака и цвет символов — вкладка «Настройки» → «Иконки направлений» */
+/* sign style and symbol color: Settings -> "Direction icons" */
 .di-sym { font-weight: 500; }
 .di-colors { display: flex; flex-wrap: wrap; gap: 6px; }
 .di-swatch { box-sizing: border-box; width: 22px; height: 22px; padding: 0; border: 2px solid transparent; border-radius: 50%; cursor: pointer;
