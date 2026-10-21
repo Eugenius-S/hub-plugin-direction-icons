@@ -37,7 +37,7 @@ class Emoji(unittest.TestCase):
 
 class Symbols(unittest.TestCase):
     def test_set_has_codes_for_mac_and_windows(self):
-        # владелец 12.10: стиль — эмодзи или символьный шрифт (Mac — SF Symbols, Windows — Segoe Fluent Icons)
+        # стиль — эмодзи или символьный шрифт (Mac — SF Symbols, Windows — Segoe Fluent Icons)
         groups = json.loads(read("symbols.json"))
         icons = [i for g in groups for i in g["icons"]]
         self.assertTrue(all(g["title"] and g["icons"] for g in groups))
@@ -55,19 +55,19 @@ class Symbols(unittest.TestCase):
         self.assertIn('"SF Pro"', js)
         self.assertIn('if (id === "sym" && !f) b.disabled = true', js)
         self.assertIn("COLORS[h % COLORS.length]", js)
-        # владелец 12.10: знак — в направлении, стиль, цвет и прыжок — в «Настройках»
+        # знак — в направлении, стиль, цвет и прыжок — в «Настройках»
         self.assertNotIn("di-tab", js)
 
     def test_settings_block_and_every_sidebar_icon(self):
-        # владелец 12.10: своя вкладка уехала на вторую строку — блок во вкладке «Настройки» (API 1.13), на старом
+        # своя вкладка уехала на вторую строку — блок во вкладке «Настройки» (API 1.13), на старом
         # хабе — короткая своя; стиль — у всех знаков списка (специалисты, направления, исполнители); менять знак
         # можно у специалистов и направлений
         js = read("main.js")
         self.assertIn('hub.addOptions({ title: "Иконки"', js)
         self.assertIn('hub.addSettings({ id: "direction-icons", title: "Иконки"', js)
         self.assertIn('blockInSettings = () => api(13)', js)
-        self.assertIn('tab: "theme"', js)                               # владелец 12.10: настройки — во вкладке «Тема» (1.14)
-        self.assertIn('kind === "agent" || kind === "direction" || kind === "hub"', js)    # editable, и хаб (владелец 12.10)
+        self.assertIn('tab: "theme"', js)                               # настройки — во вкладке «Тема» (1.14)
+        self.assertIn('kind === "agent" || kind === "direction" || kind === "hub"', js)    # editable, и хаб
         self.assertIn('s.kind === "hub" ? "hub"', js)
         self.assertIn('hub: ["", "house"]', js)                         # у хаба эмодзи нет, символ — дом
         self.assertIn('s.role === "agent" ? "agent"', js)
@@ -88,14 +88,14 @@ class Source(unittest.TestCase):
         self.assertNotIn("eval(", js)
 
     def test_the_button_stands_before_the_title(self):
-        # владелец 07.10: иконка слева, перед названием направления (было — после статуса)
+        # иконка слева, перед названием направления (было — после статуса)
         js = read("main.js")
         self.assertIn('":scope > h2"', js)
         self.assertIn("title.before(root)", js)
         self.assertNotIn("pill.after(root)", js)
 
     def test_unread_direction_hops_and_can_be_switched_off(self):
-        # владелец 12.10: итог не прочитан — знак плавно прыгает на 5 px, как в доке Mac; выключить можно в настройках
+        # итог не прочитан — знак плавно прыгает на 5 px, как в доке Mac; выключить можно в настройках
         js, css = read("main.js"), read("style.css")
         self.assertIn('classList.contains("unread")', js)
         self.assertIn('s.hop !== false', js)                       # по умолчанию включено
@@ -106,14 +106,14 @@ class Source(unittest.TestCase):
         self.assertIn(f"animation: di-hop {hop}ms infinite", css)  # фаза из часов страницы — та же длительность
 
     def test_any_unread_sign_hops_not_only_directions(self):
-        # владелец 12.10: специалист закончил задачу — его знак тоже прыгает (прыгали только направления)
+        # специалист закончил задачу — его знак тоже прыгает (прыгали только направления)
         js = read("main.js")
         on = re.search(r"const on = (.+);", js).group(1)
         self.assertNotIn('kind === "direction"', on)
         self.assertIn('classList.contains("unread")', on)
 
     def test_the_emoji_lives_in_the_core(self):
-        # 1.7.0 (владелец 19.10, «починить под новый хаб»): значок сессии — у ядра (POST /api/session/icon, own_icon);
+        # 1.7.0: значок сессии — у ядра (POST /api/session/icon, own_icon);
         # плагин пишет туда эмодзи и не перекрывает его своим из localStorage
         js = read("main.js")
         self.assertIn('hub.post("/api/session/icon"', js)
