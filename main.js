@@ -94,19 +94,19 @@ const HOP = 1600;   // ms: one hop and a pause, same as the di-hop animation dur
 const COLORS = ["#e5484d", "#f76b15", "#ffb224", "#30a46c", "#12a594", "#0090ff", "#3e63dd", "#8e4ec6", "#d6409f", "#8d8d86"];
 // session emoji -> a symbol of the same meaning (hub signs of specialists and the emoji.json set)
 const BY_EMOJI = {
-  "🎯": "target", "🚀": "airplane", "🛰": "globe", "🗺": "map", "📍": "location", "🏁": "flag", "🌍": "globe", "🔭": "binoculars",
-  "🧩": "puzzlepiece", "🏗": "hammer", "⚙": "gearshape", "🛠": "hammer", "🧪": "atom", "📦": "shippingbox", "📝": "doc.text",
+  "🎯": "target", "🚀": "airplane", "🛰": "satellite", "🗺": "map", "📍": "location", "🏁": "flag", "🌍": "globe", "🔭": "binoculars",
+  "🧩": "puzzlepiece", "🏗": "crane", "⚙": "gearshape", "🛠": "hammer", "🧪": "atom", "📦": "shippingbox", "📝": "doc.text",
   "📊": "chart.bar", "📈": "chart.line.uptrend.xyaxis", "📣": "megaphone", "💬": "quote.bubble", "📧": "envelope",
-  "📚": "books.vertical", "🗂": "folder", "📅": "calendar", "💡": "lightbulb", "🔍": "magnifyingglass", "🧾": "doc.text",
+  "📚": "books.vertical", "🗂": "folder", "📅": "calendar", "💡": "lightbulb", "🔍": "magnifyingglass", "🧾": "receipt",
   "💼": "briefcase", "🏷": "tag", "🔔": "bell", "📌": "pin", "🎨": "paintpalette", "🖌": "paintbrush", "✏": "pencil",
-  "✍": "scribble.variable", "📐": "pencil.and.ruler", "🎬": "film", "🎞": "film", "📷": "camera", "🎵": "music.note", "🎧": "music.note",
+  "✍": "scribble.variable", "📐": "pencil.and.ruler", "🎬": "film", "🎞": "photo.reel", "📷": "camera", "🎵": "music.note", "🎧": "headphones",
   "🎮": "gamecontroller", "🖼": "photo", "✨": "sparkles", "🌈": "sparkles", "🪄": "sparkles", "🎭": "face.smiling",
   "🧵": "scribble.variable", "💻": "laptopcomputer", "🧑‍💻": "laptopcomputer", "👨‍💻": "laptopcomputer", "👩‍💻": "laptopcomputer",
-  "🖥": "desktopcomputer", "📱": "laptopcomputer", "🤖": "cpu", "🧠": "brain", "🔌": "bolt", "🔋": "bolt", "🌐": "network",
-  "🔒": "lock", "🔑": "key", "🛡": "shield", "🧬": "atom", "⚡": "bolt", "🔧": "hammer", "🪛": "hammer", "🧰": "briefcase",
+  "🖥": "desktopcomputer", "📱": "smartphone", "🤖": "cpu", "🧠": "brain", "🔌": "plug", "🔋": "battery", "🌐": "network",
+  "🔒": "lock", "🔑": "key", "🛡": "shield", "🧬": "dna", "⚡": "bolt", "🔧": "wrench", "🪛": "hammer", "🧰": "toolbox",
   "🌱": "leaf", "🌳": "tree", "🌸": "leaf", "🍀": "leaf", "🔥": "flame", "💧": "drop", "🌙": "moon", "☀": "sun.max", "⭐": "star",
-  "❄": "snowflake", "🐱": "pawprint", "🐶": "pawprint", "🦊": "pawprint", "🐼": "pawprint", "🐙": "fish", "🦋": "bird",
-  "☕": "cup.and.saucer", "🍕": "fork.knife", "🍩": "fork.knife", "🍎": "fork.knife", "🧁": "fork.knife", "🎁": "gift",
+  "❄": "snowflake", "🐱": "cat", "🐶": "dog", "🦊": "pawprint", "🐼": "pawprint", "🐙": "fish", "🦋": "bird",
+  "☕": "cup.and.saucer", "🍕": "pizza", "🍩": "fork.knife", "🍎": "apple", "🧁": "fork.knife", "🎁": "gift",
   "🏆": "trophy", "💎": "crown", "❤": "heart", "💜": "heart", "💙": "heart", "💚": "heart",
 };
 let hub = null, asked = new Set(), groups = null, symbols = null, openFor = null;

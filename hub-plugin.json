@@ -3,7 +3,7 @@
   "icon": "icon.png",
   "description": "Every session in the list has its own icon, picked in the session chat with the button to the left of the title: an emoji is the session icon in the hub, seen everywhere (Telegram, other devices). The style (emoji or outline symbols) and color are changed in Settings → Look → Icons, and the icon of a session with an unread result hops",
   "why": "You see the session you need at a glance",
-  "version": "1.9.0",
+  "version": "1.9.1",
   "hub": "^1.16",
   "web": "main.js",
   "i18n": {

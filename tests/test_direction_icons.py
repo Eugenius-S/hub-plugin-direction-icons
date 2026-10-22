@@ -101,6 +101,15 @@ class Symbols(unittest.TestCase):
         mapped = set(re.findall(r'": "([a-z.]+)"', js[js.index("BY_EMOJI"):js.index("};", js.index("BY_EMOJI"))]))
         self.assertEqual(mapped - symbols, set())                       # every symbol of the map is in the set
         self.assertIn('load("symbols.json")', js)
+        # different emoji of the hub specialists and of the picker must not become one symbol (1.9.1: the film strip and
+        # the clapperboard were both "film")
+        pairs = re.findall(r'"([^"]+)": "([a-z.]+)"', js[js.index("BY_EMOJI"):js.index("};", js.index("BY_EMOJI"))])
+        by = dict((e.replace("️", ""), n) for e, n in pairs)
+        distinct = ["🎞", "🎬", "🎨", "🪄", "✍", "🧪", "📊",
+                    "📷", "🎵", "🎧", "💻", "📱", "🔌", "🔋",
+                    "🔧", "🏗", "🧬", "🧾", "🧰", "🛰", "🐱",
+                    "🐶", "🍕", "🍎"]
+        self.assertEqual(len({by[e] for e in distinct}), len(distinct))
 
 
 class Source(unittest.TestCase):
