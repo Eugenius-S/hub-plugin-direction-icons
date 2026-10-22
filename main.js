@@ -5,7 +5,7 @@
 //
 // The session emoji belongs to the core (v1.1: its own icon, event session.iconed, POST /api/session/icon): a pick in the
 // header is written there, is seen everywhere (Telegram, another machine, another browser), and the list and header draw
-// the core icon. What stays here: SF/Segoe symbols, color and hop; the core knows nothing about them. A symbol remembers
+// the core icon. What stays here: outline symbols, color and hop; the core knows nothing about them. A symbol remembers
 // the core emoji it was picked at: if the core icon changed later, the symbol yields to it (the newer wins). A local emoji
 // from older versions moves to the core once, if the session has no icon of its own there yet.
 //
@@ -17,8 +17,8 @@
 // specialist, worker) smoothly hops by 5 px, like an icon in the Mac dock. The row is rebuilt on every snapshot, so the hop
 // phase is taken from the page clock: a new node continues the motion instead of starting over.
 //
-// Style, for all signs of the list: specialists, directions, workers. Emoji or a symbol of the system font: SF Symbols on
-// Mac (the SF Pro font), Segoe Fluent Icons on Windows (MDL2 on Windows 10); with no font the "Symbols" style is inactive.
+// Style, for all signs of the list: specialists, directions, workers. Emoji or a symbol: an outline Icons8 icon (the
+// m_outlined pack, like every icon of the page) drawn from its SVG path in the text color, the same on every OS.
 // A symbol with no choice of its own follows the session emoji (a palette for the artist emoji), otherwise the sign of its
 // role. Style, symbol color (its own or random, stable per session) and hop: a block in the Settings tab (API 1.13; on an
 // old hub, a tab of its own, "Icons").
@@ -39,10 +39,7 @@ const STR = {
     style_emoji: "Emoji",
     style_sym: "Symbols",
     set_style: "Style — for all signs of the list",
-    hint_sym: "Symbols — {font}. The sign of the hub, a specialist or a direction is set with the button to the left of the title in its header.",
-    font_sf: "SF Symbols (SF Pro font)",
-    font_win: "Segoe Fluent Icons",
-    hint_nofont: "No symbols: needs the SF Pro font (Mac, developer.apple.com/fonts) or Segoe Fluent Icons (Windows).",
+    hint_sym: "Symbols — outline icons, the same on every system. The sign of the hub, a specialist or a direction is set with the button to the left of the title in its header.",
     rnd_title: "Random: its own for each session",
     own_color: "Custom color",
     set_color: "Symbol color",
@@ -65,10 +62,7 @@ const STR = {
     style_emoji: "Эмодзи",
     style_sym: "Символы",
     set_style: "Стиль — для всех знаков списка",
-    hint_sym: "Символы — {font}. Знак хаба, специалиста или направления — кнопкой слева от названия в его шапке.",
-    font_sf: "SF Symbols (шрифт SF Pro)",
-    font_win: "Segoe Fluent Icons",
-    hint_nofont: "Символов нет: нужен шрифт SF Pro (Mac, developer.apple.com/fonts) или Segoe Fluent Icons (Windows).",
+    hint_sym: "Символы — контурные значки, одинаковые в любой системе. Знак хаба, специалиста или направления — кнопкой слева от названия в его шапке.",
     rnd_title: "Случайный: свой у каждой сессии",
     own_color: "Свой цвет",
     set_color: "Цвет символов",
@@ -93,14 +87,10 @@ const t = (k, v) => {
 const groupTitle = (g) => STR[lang()].groups[g.title] ?? g.title;
 const KEY = "hub.directionIcons";
 const SET = "hub.directionIcons.settings";
-const COMPASS = { sf: "100dcc", win: "e812" };   // direction compass in the "Symbols" style: location.north.circle / MapCompassTop
+const COMPASS = "compass";   // direction compass in the "Symbols" style
 const ROLE = { agent: ["🤖", "person"], direction: ["🧭", null], other: ["", "hammer"], hub: ["", "house"] };   // the hub sign and the role symbol
 const HUB_EMOJI = "🧠";   // the hub icon in the core until it has its own
 const HOP = 1600;   // ms: one hop and a pause, same as the di-hop animation duration in style.css
-const FONTS = {
-  sf: '"SF Pro", "SF Pro Text", "SF Pro Display", "SF Compact"',
-  win: '"Segoe Fluent Icons", "Segoe MDL2 Assets"',
-};
 const COLORS = ["#e5484d", "#f76b15", "#ffb224", "#30a46c", "#12a594", "#0090ff", "#3e63dd", "#8e4ec6", "#d6409f", "#8d8d86"];
 // session emoji -> a symbol of the same meaning (hub signs of specialists and the emoji.json set)
 const BY_EMOJI = {
@@ -110,7 +100,7 @@ const BY_EMOJI = {
   "📚": "books.vertical", "🗂": "folder", "📅": "calendar", "💡": "lightbulb", "🔍": "magnifyingglass", "🧾": "doc.text",
   "💼": "briefcase", "🏷": "tag", "🔔": "bell", "📌": "pin", "🎨": "paintpalette", "🖌": "paintbrush", "✏": "pencil",
   "✍": "scribble.variable", "📐": "pencil.and.ruler", "🎬": "film", "🎞": "film", "📷": "camera", "🎵": "music.note", "🎧": "music.note",
-  "🎮": "gamecontroller", "🖼": "photo", "✨": "sparkles", "🌈": "sparkles", "🪄": "wand.and.stars", "🎭": "face.smiling",
+  "🎮": "gamecontroller", "🖼": "photo", "✨": "sparkles", "🌈": "sparkles", "🪄": "sparkles", "🎭": "face.smiling",
   "🧵": "scribble.variable", "💻": "laptopcomputer", "🧑‍💻": "laptopcomputer", "👨‍💻": "laptopcomputer", "👩‍💻": "laptopcomputer",
   "🖥": "desktopcomputer", "📱": "laptopcomputer", "🤖": "cpu", "🧠": "brain", "🔌": "bolt", "🔋": "bolt", "🌐": "network",
   "🔒": "lock", "🔑": "key", "🛡": "shield", "🧬": "atom", "⚡": "bolt", "🔧": "hammer", "🪛": "hammer", "🧰": "briefcase",
@@ -119,7 +109,7 @@ const BY_EMOJI = {
   "☕": "cup.and.saucer", "🍕": "fork.knife", "🍩": "fork.knife", "🍎": "fork.knife", "🧁": "fork.knife", "🎁": "gift",
   "🏆": "trophy", "💎": "crown", "❤": "heart", "💜": "heart", "💙": "heart", "💚": "heart",
 };
-let hub = null, asked = new Set(), groups = null, symbols = null, openFor = null, font;
+let hub = null, asked = new Set(), groups = null, symbols = null, openFor = null;
 
 const readJSON = (key) => { try { const v = JSON.parse(localStorage.getItem(key) || "{}"); return v && typeof v === "object" ? v : {}; } catch { return {}; } };
 const writeJSON = (key, v) => { try { localStorage.setItem(key, JSON.stringify(v)); } catch { /* no storage */ } };
@@ -149,27 +139,25 @@ function setSettings(patch) {
   repaint();
 }
 
-// the symbol font of this machine: a glyph wider/narrower than the fallback means the font exists (the two fallbacks differ in width, so no coincidences)
-function symbolFont() {
-  if (font !== undefined) return font;
-  const probe = { sf: "\u{100215}", win: "" };   // folder: SF Symbols folder, Segoe Folder
-  const ctx = document.createElement("canvas").getContext("2d");
-  const width = (fam, ch) => { ctx.font = `32px ${fam}`; return ctx.measureText(ch).width; };
-  font = null;
-  for (const [k, ch] of Object.entries(probe)) {
-    if (["monospace", "serif"].some((b) => width(`${FONTS[k]}, ${b}`, ch) !== width(b, ch))) { font = k; break; }
-  }
-  return font;
-}
-const symbolStyle = () => settings().style === "sym" && !!symbolFont() && !!symbols;
+const symbolStyle = () => settings().style === "sym" && !!symbols;
 
 // who the session is: the hub, a specialist, a direction or the rest (workers, ordinary ones)
 const isDirection = (s, snap) => !!s && s.kind !== "hub" && s.role !== "agent" && (!!s.backlog || (snap?.directions || []).includes(s.name));
 const kindOf = (s, snap) => (!s ? null : s.kind === "hub" ? "hub" : s.role === "agent" ? "agent" : isDirection(s, snap) ? "direction" : "other");
 const editable = (kind) => kind === "agent" || kind === "direction" || kind === "hub";   // the sign can be changed for the hub, specialists and directions
 
-const glyph = (code) => String.fromCodePoint(parseInt(code, 16));
-const codeOf = (sym) => { for (const g of symbols || []) for (const s of g.icons) if (s.n === sym) return s[symbolFont()] || null; return null; };
+// a symbol is the path of an outline icon (viewBox 24), drawn in the text color
+const SVG = "http://www.w3.org/2000/svg";
+const pathOf = (sym) => { for (const g of symbols || []) for (const s of g.icons) if (s.n === sym) return s.d || null; return null; };
+function glyph(d) {
+  const svg = document.createElementNS(SVG, "svg"), p = document.createElementNS(SVG, "path");
+  svg.setAttribute("viewBox", "0 0 24 24");
+  svg.setAttribute("class", "di-svg");
+  svg.setAttribute("aria-hidden", "true");
+  p.setAttribute("d", d);
+  svg.append(p);
+  return svg;
+}
 function colorOf(name) {
   const c = settings().color;
   if (c) return c;
@@ -182,23 +170,23 @@ function colorOf(name) {
 function look(name, kind, base) {
   const emoji = base || ROLE[kind][0], sym = editable(kind) ? symOf(name, base) : "";
   if (!symbolStyle()) return { emoji: emoji || (kind === "hub" ? HUB_EMOJI : "") };
-  const code = (sym && codeOf(sym)) || codeOf(BY_EMOJI[emoji.replace(/️/g, "")])
-    || (kind === "direction" ? COMPASS[symbolFont()] : codeOf(ROLE[kind][1]));
+  const code = (sym && pathOf(sym)) || pathOf(BY_EMOJI[emoji.replace(/️/g, "")])
+    || (kind === "direction" ? pathOf(COMPASS) : pathOf(ROLE[kind][1]));
   return code ? { code } : { emoji };
 }
 
 function paintIcon(node, name, kind, base) {
   const { emoji, code } = look(name, kind, base);
   node.classList.toggle("di-sym", !!code);
-  node.style.fontFamily = code ? FONTS[symbolFont()] : "";
   node.style.color = code ? colorOf(name) : "";
-  node.textContent = code ? glyph(code) : emoji;
+  if (code) node.replaceChildren(glyph(code)); else node.textContent = emoji;
 }
 
 function paintButton(btn, name, kind, base) {
   paintIcon(btn, name, kind, base);
-  btn.classList.toggle("di-empty", !btn.textContent);   // the hub has no default emoji, the button is visible anyway
-  if (!btn.textContent) btn.textContent = "+";
+  const empty = !btn.firstChild;
+  btn.classList.toggle("di-empty", empty);   // the hub has no default emoji, the button is visible anyway
+  if (empty) btn.textContent = "+";
 }
 
 // the symbol is kept here (with the core emoji it was picked at); empty means back to default
@@ -284,15 +272,15 @@ function popover(name, kind, base) {
   pop.setAttribute("role", "dialog");
   pop.setAttribute("aria-label", t("icon"));
   for (const g of (sym ? symbols : groups) || []) {
-    const list = sym ? g.icons.filter((s) => s[symbolFont()]) : g.icons;
+    const list = sym ? g.icons.filter((s) => s.d) : g.icons;
     if (!list.length) continue;
     pop.append(hub.el("div", "di-title", groupTitle(g)));
     const grid = hub.el("div", "di-grid");
     for (const s of list) {
-      const b = sym ? button("di-opt di-sym", glyph(s[symbolFont()]), () => saveSym(name, s.n, base))
+      const b = sym ? button("di-opt di-sym", "", () => saveSym(name, s.n, base))
         : button("di-opt", s, () => saveEmoji(name, s));
-      if (sym) { b.style.fontFamily = FONTS[symbolFont()]; b.style.color = colorOf(name); b.title = s.n; }
-      b.setAttribute("aria-pressed", String(sym ? cur.code === s[symbolFont()] : cur.emoji === s));
+      if (sym) { b.append(glyph(s.d)); b.style.color = colorOf(name); b.title = s.n; }
+      b.setAttribute("aria-pressed", String(sym ? cur.code === s.d : cur.emoji === s));
       grid.append(b);
     }
     pop.append(grid);
@@ -375,16 +363,15 @@ let settingsRoot = null;
 
 function paintSettings(root) {
   settingsRoot = root;
-  const s = settings(), f = symbolFont();
+  const s = settings();
   const style = hub.el("div", "seg");
   for (const [id, label] of [["emoji", t("style_emoji")], ["sym", t("style_sym")]]) {
     const b = button(null, label, () => setSettings({ style: id }));
     b.setAttribute("aria-pressed", String(id === "sym" ? symbolStyle() : !symbolStyle()));
-    if (id === "sym" && !f) b.disabled = true;
     style.append(b);
   }
   const rows = [hub.el("div", "di-set-title", t("set_style")), style,
-    hub.el("p", "hint", f ? t("hint_sym", { font: t(f === "sf" ? "font_sf" : "font_win") }) : t("hint_nofont"))];
+    hub.el("p", "hint", t("hint_sym"))];
   if (symbolStyle()) {
     const colors = hub.el("div", "di-colors");
     const rnd = button("di-swatch di-rnd", "", () => setSettings({ color: "" }));

@@ -29,7 +29,8 @@
 }
 @media (prefers-reduced-motion: reduce) { .avatar.di-hop { animation: none; } }
 /* sign style and symbol color: Settings -> "Direction icons" */
-.di-sym { font-weight: 500; }
+/* a symbol is an outline SVG of the Icons8 m_outlined pack in the text color; it scales with the font size of the sign */
+.di-svg { width: 1.25em; height: 1.25em; fill: currentColor; flex: none; vertical-align: -0.25em; }
 .di-colors { display: flex; flex-wrap: wrap; gap: 6px; }
 .di-swatch { box-sizing: border-box; width: 22px; height: 22px; padding: 0; border: 2px solid transparent; border-radius: 50%; cursor: pointer;
   box-shadow: inset 0 0 0 1px rgb(0 0 0 / 12%); }

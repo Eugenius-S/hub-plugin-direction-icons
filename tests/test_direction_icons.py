@@ -56,25 +56,30 @@ class Emoji(unittest.TestCase):
 
 
 class Symbols(unittest.TestCase):
-    def test_set_has_codes_for_mac_and_windows(self):
-        # the style is emoji or a symbol font (Mac: SF Symbols, Windows: Segoe Fluent Icons)
+    def test_set_has_an_outline_svg_path_for_every_symbol(self):
+        # the style is emoji or a symbol: an outline Icons8 icon (m_outlined), its path in a 24x24 box, the same on every OS
         groups = json.loads(read("symbols.json"))
         icons = [i for g in groups for i in g["icons"]]
         self.assertTrue(all(g["title"] and g["icons"] for g in groups))
+        self.assertGreaterEqual(len(icons), 100)
         self.assertEqual(len({i["n"] for i in icons}), len(icons))
-        for font, lo, hi, least in (("sf", 0x100000, 0x10FFFD, 60), ("win", 0xE000, 0xF8FF, 40)):
-            codes = [int(i[font], 16) for i in icons if font in i]
-            self.assertGreaterEqual(len(codes), least, font)
-            self.assertEqual(len(codes), len(set(codes)), font)   # no duplicates in the grid
-            self.assertTrue(all(lo <= c <= hi for c in codes), font)   # the private use area of the font
-        self.assertTrue(all("sf" in i or "win" in i for i in icons))
+        for i in icons:
+            self.assertEqual(set(i), {"n", "d"}, i["n"])
+            self.assertRegex(i["d"], r"^[MmLlHhVvCcSsQqTtAaZz0-9eE.,\s+-]+$", i["n"])   # a path, nothing else (it goes into an SVG)
+        self.assertEqual(len({i["d"] for i in icons}), len(icons))   # no two names with the same picture
+        names = {i["n"] for i in icons}
+        for need in ("person", "person.2", "person.3", "house", "hammer", "compass"):
+            self.assertIn(need, names)
 
-    def test_symbol_tab_is_off_without_the_font(self):
+    def test_symbols_need_no_font(self):
         js = read("main.js")
-        self.assertIn('"Segoe Fluent Icons"', js)
-        self.assertIn('"SF Pro"', js)
-        self.assertIn('if (id === "sym" && !f) b.disabled = true', js)
+        for gone in ("Segoe", "SF Pro", "symbolFont", "FONTS", "fontFamily", "hint_nofont"):
+            self.assertNotIn(gone, js, gone)
+        self.assertIn('createElementNS(SVG, "path")', js)           # drawn from the path of the set
         self.assertIn("COLORS[h % COLORS.length]", js)
+        css = read("style.css")
+        self.assertIn(".di-svg", css)
+        self.assertIn("fill: currentColor", css)
         # the sign is set in the direction; style, color and hop are in Settings
         self.assertNotIn("di-tab", js)
 
