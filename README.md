@@ -10,8 +10,8 @@ The UI is in English by default and in Russian when the hub language is Russian.
 - **Style and color — in the "Look" tab:** Settings → Look → the "Icons" block. The hop of an unread direction is there too.
 
 - Style applies to all signs of the list (hub, specialists, directions, workers), Settings → Look → the "Icons" block:
-  emoji or symbols of the system font — SF Symbols on Mac (needs the SF Pro font from developer.apple.com/fonts), Segoe
-  Fluent Icons on Windows (Segoe MDL2 Assets on Windows 10); with no font "Symbols" is inactive. The symbol color (from a
+  emoji or symbols — outline [Icons8](https://icons8.com) icons (the same pack as the icons of the hub page), drawn from
+  their SVG in the text color, so they look the same on every system and need no font. The symbol color (from a
   set, your own, or "random", stable per session) and the hop are there too. A symbol with no choice of its own follows the
   session emoji (🎨 → palette), otherwise the sign of its role. The header only has the sign picker in the current style;
   switching the style does not lose a symbol. The symbol set is `symbols.json`.
