@@ -1,15 +1,15 @@
 {
   "name": "direction-icons",
   "icon": "icon.png",
-  "description": "Every session in the list has its own icon, picked in the session chat with the button to the left of the title: an emoji is the session icon in the hub, seen everywhere (Telegram, other devices). The style (emoji or outline symbols) and color are changed in Settings → Look → Icons, and the icon of a session with an unread result hops",
-  "why": "You see the session you need at a glance",
-  "version": "1.9.1",
+  "description": "A personal icon for every chat in the list: pick it with the button left of the title. An emoji icon shows everywhere, in Telegram and on other devices. Style and color are in Settings → Look → Icons; the icon of a chat with an unread result hops.",
+  "why": "You see the chat you need at a glance",
+  "version": "1.9.2",
   "hub": "^1.16",
   "web": "main.js",
   "i18n": {
     "ru": {
-      "description": "У каждой сессии в списке свой значок, его выбирают в чате сессии кнопкой слева от названия: эмодзи — значок сессии в хабе, он виден везде (Telegram, другие устройства). Стиль (эмодзи или контурные значки) и цвет меняются в «Настройки» → «Вид» → «Иконки», а значок сессии с непрочитанным итогом подпрыгивает",
-      "why": "Нужную сессию видно с одного взгляда"
+      "description": "Свой значок у каждого чата в списке: выбирается кнопкой слева от названия. Эмодзи виден везде, в Telegram и на других устройствах. Стиль (эмодзи или контурные значки) и цвет меняются в «Настройки» → «Вид» → «Иконки», а значок чата с непрочитанным итогом подпрыгивает.",
+      "why": "Нужный чат видно с одного взгляда"
     }
   }
 }

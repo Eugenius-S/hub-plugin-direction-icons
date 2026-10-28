@@ -196,7 +196,7 @@ class Languages(unittest.TestCase):
         self.assertEqual(node_eval("ru", 't("reset")'), "Как было")
         self.assertEqual(node_eval("ru", 'groupTitle({ title: "Work" })'), "Работа")
         self.assertEqual(node_eval("ru", 't("foot_hint", { tab: t("tab_look") })'),
-                         "Стиль, цвет и прыжок — «Настройки» → «Тема»")
+                         "Стиль, цвет и прыжок: «Настройки» → «Вид»")
 
     def test_language_is_read_at_use_time(self):
         js = read("main.js")
@@ -204,7 +204,7 @@ class Languages(unittest.TestCase):
         self.assertNotRegex(js, r"const lang = hub")
 
     def test_substitution_and_fallback_to_the_key(self):
-        self.assertEqual(node_eval("en", 't("foot_hint", { tab: "Look" })'), "Style, color and hop — Settings → Look")
+        self.assertEqual(node_eval("en", 't("foot_hint", { tab: "Look" })'), "Style, color and hop: Settings → Look")
         self.assertEqual(node_eval("en", 't("no_such_key")'), "no_such_key")
 
     def test_group_titles_have_russian_names(self):
