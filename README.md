@@ -42,8 +42,8 @@ a character picture for every session in the feed. There the plugin does not rep
 
 **The set** is the `avatars` folder plus the list `avatars.json` (file names in the order shown). Files are PNG 160x160, because
 the hub serves a plugin's `.png` and not `.jpg`. Adding avatars is "put the files in `avatars` and add their names to
-`avatars.json`"; to convert JPEGs: `python -c "from PIL import Image; Image.open('a.jpg').convert('RGBA').save('a.png')"`. Four
-`placeholder-*.png` files stand in until the real set arrives.
+`avatars.json`"; to convert JPEGs: `python -c "from PIL import Image; Image.open('a.jpg').convert('RGBA').save('a.png')"`.
+The set has 24: 12 `clay-*` and 12 `fuzzy-*` (names are series-color-shape).
 
 ## Install
 

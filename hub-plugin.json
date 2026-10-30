@@ -3,7 +3,7 @@
   "icon": "icon.png",
   "description": "A personal icon for every chat in the list: pick it with the button left of the title. An emoji icon shows everywhere, in Telegram and on other devices. Style and color are in Settings → Look → Icons; the icon of a chat with an unread result hops. In the Clean theme it also offers avatars.",
   "why": "You see the chat you need at a glance",
-  "version": "1.10.0",
+  "version": "1.10.1",
   "hub": "^1.16",
   "web": "main.js",
   "i18n": {
