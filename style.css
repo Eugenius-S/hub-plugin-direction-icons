@@ -53,3 +53,9 @@ html.th-clean .di-btn.di-av { border-color: transparent; }
 html.th-clean .di-img { display: block; width: 100%; height: 100%; border-radius: inherit; background: center / cover no-repeat; }
 html.th-clean .di-opt.di-av-opt { overflow: hidden; }
 html.th-clean .di-av-opt .di-img { border-radius: 6px; }
+/* Clean: the symbols of the picker take the text color of the theme (the per-chat colors are not used here), the chosen cell is a neutral fill instead of the blue accent */
+html.th-clean .di-pop .di-opt.di-sym { color: var(--c-t2, var(--muted-foreground)) !important; }
+html.th-clean .di-pop .di-opt.di-sym:hover { color: var(--c-t1, var(--foreground)) !important; }
+html.th-clean .di-opt:hover { background: var(--c-fill, var(--muted)); }
+html.th-clean .di-opt[aria-pressed="true"] { border-color: var(--c-line-strong, var(--border)); background: var(--c-fill, var(--muted)); }
+html.th-clean .di-opt.di-sym[aria-pressed="true"] { color: var(--c-t1, var(--foreground)) !important; }
