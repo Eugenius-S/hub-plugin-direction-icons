@@ -37,13 +37,17 @@ a character picture for every session in the feed. There the plugin does not rep
 - The picker has a group "Avatars" before the emoji. A pick goes into the feed in place of the theme picture; "Reset" gives the
   theme picture back. The pick is kept in this browser (the key `hub.directionIcons.img`); a newer icon of the session in the hub
   wins over it, like for a symbol.
+- A direction that was never given an avatar shows a grey one (the same in the header button and in the feed); a pick or an
+  emoji of the core that the theme has a picture for stays as it was.
 - The row signs of the list are left alone (Clean hides them), so there are never two signs in one place.
 - In the standard theme none of this exists: no group, no change in the feed.
 
 **The set** is the `avatars` folder plus the list `avatars.json` (file names in the order shown). Files are PNG 160x160, because
 the hub serves a plugin's `.png` and not `.jpg`. Adding avatars is "put the files in `avatars` and add their names to
 `avatars.json`"; to convert JPEGs: `python -c "from PIL import Image; Image.open('a.jpg').convert('RGBA').save('a.png')"`.
-The set has 24: 12 `clay-*` and 12 `fuzzy-*` (names are series-color-shape).
+The set has 40, five rows of the picker: 24 colored (12 `clay-*` and 12 `fuzzy-*`, names are series-color-shape) and 16 light grey
+ones (8 `grey-clay-*` and 8 `grey-fuzzy-*`) last. A direction with no pick of its own gets one of the grey avatars by a hash of its
+name; the colored ones are for picking by hand. Any other session keeps the theme picture.
 
 ## Install
 

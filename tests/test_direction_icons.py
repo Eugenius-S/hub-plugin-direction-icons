@@ -231,6 +231,22 @@ class CleanAvatars(unittest.TestCase):
         self.assertIn('"diImg" in node.dataset', js)              # the marker is an empty string: it is checked by key (a falsy value lost the reset)
         self.assertIn('addEventListener("hub-theme"', js)
 
+    def test_sixteen_grey_avatars_come_after_the_colored_ones(self):
+        # the picker is one grid of 8 columns: 24 colored (3 rows) then 16 grey (2 rows); the grey files start with "grey-"
+        names = self.names()
+        grey = [n for n in names if n.startswith("grey-")]
+        self.assertEqual(len(grey), 16)
+        self.assertEqual(len(names) - len(grey), 24)
+        self.assertEqual(names[24:], grey)                        # the grey rows are the last two
+
+    def test_a_direction_defaults_to_a_grey_avatar_and_a_picked_one_stays(self):
+        js = read("main.js")
+        self.assertIn('f.startsWith("grey-")', js)
+        self.assertRegex(js, r'kind === "direction" && grey\.length')   # only a direction, only when the set has grey ones
+        self.assertIn("grey[hashOf(name) % grey.length]", js)     # by a hash of the name, stable per session
+        self.assertIn("imgOf(name, base) || defaultImg(name, kind)", js)   # the picked avatar comes first
+        self.assertIn('"diImg" in node.dataset', js)              # a reset still gives the theme picture back
+
     def test_the_strings_of_the_set(self):
         self.assertEqual(node_eval("en", 't("avatars")'), "Avatars")
         self.assertEqual(node_eval("ru", 't("avatars")'), "Аватарки")

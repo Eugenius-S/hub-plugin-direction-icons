@@ -144,17 +144,34 @@ function writeImg(name, file, base) {
   writeJSON(IMG, all);
 }
 // the picture the theme draws for a session (its pictureFor): the picture of the core emoji or one of the set by a hash of the name
-const themePic = (name) => {
-  let kit = {};
-  try { kit = JSON.parse(localStorage.getItem("hub.theme") || "null")?.theme?.avatars_url || {}; } catch { /* no theme */ }
-  const pool = Object.values(kit).filter((u) => /\.jpe?g\b/.test(u)), own = (hub.snapshot?.()?.sessions || []).find((x) => x.name === name)?.icon;
+const themeKit = () => {
+  try { return JSON.parse(localStorage.getItem("hub.theme") || "null")?.theme?.avatars_url || {}; } catch { return {}; /* no theme */ }
+};
+const ownEmoji = (name) => (hub.snapshot?.()?.sessions || []).find((x) => x.name === name)?.icon;
+const hashOf = (name) => {
   let h = 5381;
   for (const ch of name) h = ((h << 5) + h + ch.codePointAt(0)) >>> 0;
-  const url = (own && kit[own]) || pool[h % pool.length];
+  return h;
+};
+const themePic = (name) => {
+  const kit = themeKit(), pool = Object.values(kit).filter((u) => /\.jpe?g\b/.test(u)), own = ownEmoji(name);
+  const url = (own && kit[own]) || pool[hashOf(name) % pool.length];
   return url ? `url("${url}")` : "";
 };
-// what the session looks like in Clean: the picked avatar, else the theme picture
-const cleanPic = (name, base) => { const f = imgOf(name, base); return f ? imgUrl(f) : themePic(name); };
+// the grey avatars (files grey-*.png of the set): the default picture of a direction, so a new one never gets a colored avatar
+// the owner may want for something else; the colored ones are for picking by hand
+const greyList = () => (avatars || []).filter((f) => f.startsWith("grey-"));
+// the default picture in Clean: a direction takes a grey avatar by a hash of its name (unless the core gave it an emoji the theme
+// has a picture for), any other session keeps the theme picture. The grey one is shown in the feed too (see swap)
+const defaultImg = (name, kind) => {
+  const grey = greyList();
+  return kind === "direction" && grey.length && !themeKit()[ownEmoji(name)] ? grey[hashOf(name) % grey.length] : "";
+};
+// what the session looks like in Clean: the picked avatar, else the default grey one of a direction, else the theme picture
+const cleanPic = (name, base, kind) => {
+  const f = imgOf(name, base) || defaultImg(name, kind);
+  return f ? imgUrl(f) : themePic(name);
+};
 
 // shared settings; before 1.3 there were none, so whoever already has symbols gets the "Symbols" style
 function settings() {
@@ -214,7 +231,7 @@ function paintIcon(node, name, kind, base) {
 }
 
 function paintButton(btn, name, kind, base) {
-  const pic = inClean() && cleanPic(name, base);
+  const pic = inClean() && cleanPic(name, base, kind);
   btn.classList.toggle("di-av", !!pic);
   if (pic) {   // Clean: the button is the picture the feed shows for the session
     const img = btn.firstElementChild?.classList.contains("di-img") ? btn.firstElementChild : hub.el("span", "di-img");
@@ -407,7 +424,7 @@ function sync(root) {
 function swap(node, name) {
   const snap = hub.snapshot?.(), s = (snap?.sessions || []).find((x) => x.name === name);
   if (!s) return;
-  const kind = kindOf(s, snap), file = imgOf(name, s.icon || (kind ? ROLE[kind][0] : ""));
+  const kind = kindOf(s, snap), file = imgOf(name, s.icon || (kind ? ROLE[kind][0] : "")) || defaultImg(name, kind);
   if (!file && !("diImg" in node.dataset)) return;   // the marker is an empty string: check the key, not the value
   const pic = file ? imgUrl(file) : themePic(name);
   const kit = node.classList.contains("kit-img");
