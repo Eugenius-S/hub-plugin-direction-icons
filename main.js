@@ -23,6 +23,11 @@
 // role. Style, symbol color (its own or random, stable per session) and hop: a block in the Settings tab (API 1.13; on an
 // old hub, a tab of its own, "Icons").
 //
+// The Clean theme (class th-clean on <html>) hides the signs of the list and draws a character picture for every session in the
+// feed. There the plugin does not replace the picture: the button shows it, and the picker gets a group "Avatars" (the set is
+// avatars.json + the avatars folder) next to the emoji. The choice is kept in this browser (its own key) and puts the chosen
+// picture into the feed in place of the theme one; Reset gives the theme picture back. In the standard theme none of this exists.
+//
 // UI strings: en by default, ru when the hub language is Russian; the language is picked at use time by hub.lang.
 const STR = {
   en: {
@@ -33,6 +38,7 @@ const STR = {
     own_emoji: "Custom sign…",
     emoji_prompt: "Emoji",
     reset: "Reset",
+    avatars: "Avatars",
     foot_hint: "Style, color and hop: Settings → {tab}",
     tab_look: "Look",
     tab_icons: "Icons",
@@ -56,6 +62,7 @@ const STR = {
     own_emoji: "Свой знак…",
     emoji_prompt: "Эмодзи",
     reset: "Как было",
+    avatars: "Аватарки",
     foot_hint: "Стиль, цвет и прыжок: «Настройки» → «{tab}»",
     tab_look: "Вид",
     tab_icons: "Иконки",
@@ -87,6 +94,7 @@ const t = (k, v) => {
 const groupTitle = (g) => STR[lang()].groups[g.title] ?? g.title;
 const KEY = "hub.directionIcons";
 const SET = "hub.directionIcons.settings";
+const IMG = "hub.directionIcons.img";   // Clean: { session: { img: file of avatars.json, for: the core emoji it was picked at } }
 const COMPASS = "compass";   // direction compass in the "Symbols" style
 const ROLE = { agent: ["🤖", "person"], direction: ["🧭", null], other: ["", "hammer"], hub: ["", "house"] };   // the hub sign and the role symbol
 const HUB_EMOJI = "🧠";   // the hub icon in the core until it has its own
@@ -109,7 +117,7 @@ const BY_EMOJI = {
   "☕": "cup.and.saucer", "🍕": "pizza", "🍩": "fork.knife", "🍎": "apple", "🧁": "fork.knife", "🎁": "gift",
   "🏆": "trophy", "💎": "crown", "❤": "heart", "💜": "heart", "💙": "heart", "💚": "heart",
 };
-let hub = null, asked = new Set(), groups = null, symbols = null, openFor = null;
+let hub = null, asked = new Set(), groups = null, symbols = null, avatars = null, openFor = null;
 
 const readJSON = (key) => { try { const v = JSON.parse(localStorage.getItem(key) || "{}"); return v && typeof v === "object" ? v : {}; } catch { return {}; } };
 const writeJSON = (key, v) => { try { localStorage.setItem(key, JSON.stringify(v)); } catch { /* no storage */ } };
@@ -124,6 +132,29 @@ function stored(name) {
 }
 // the session symbol if it still holds: if the core icon changed after the pick, the core wins (base is the core icon now)
 const symOf = (name, base) => { const e = stored(name); return e.sym && (!e.for || e.for === base) ? e.sym : ""; };
+
+// ───── the Clean theme: the avatar of a session ─────
+const inClean = () => document.documentElement.classList.contains("th-clean");
+// the picked avatar (a file of the set) if it still holds: same rule as for a symbol, a newer core icon wins
+const imgOf = (name, base) => { const e = readJSON(IMG)[name]; return e && avatars?.includes(e.img) && (!e.for || e.for === base) ? e.img : ""; };
+const imgUrl = (file) => `url("${hub.url(`avatars/${file}`)}")`;
+function writeImg(name, file, base) {
+  const all = readJSON(IMG);
+  if (file) all[name] = { img: file, for: base }; else delete all[name];
+  writeJSON(IMG, all);
+}
+// the picture the theme draws for a session (its pictureFor): the picture of the core emoji or one of the set by a hash of the name
+const themePic = (name) => {
+  let kit = {};
+  try { kit = JSON.parse(localStorage.getItem("hub.theme") || "null")?.theme?.avatars_url || {}; } catch { /* no theme */ }
+  const pool = Object.values(kit).filter((u) => /\.jpe?g\b/.test(u)), own = (hub.snapshot?.()?.sessions || []).find((x) => x.name === name)?.icon;
+  let h = 5381;
+  for (const ch of name) h = ((h << 5) + h + ch.codePointAt(0)) >>> 0;
+  const url = (own && kit[own]) || pool[h % pool.length];
+  return url ? `url("${url}")` : "";
+};
+// what the session looks like in Clean: the picked avatar, else the theme picture
+const cleanPic = (name, base) => { const f = imgOf(name, base); return f ? imgUrl(f) : themePic(name); };
 
 // shared settings; before 1.3 there were none, so whoever already has symbols gets the "Symbols" style
 function settings() {
@@ -183,6 +214,16 @@ function paintIcon(node, name, kind, base) {
 }
 
 function paintButton(btn, name, kind, base) {
+  const pic = inClean() && cleanPic(name, base);
+  btn.classList.toggle("di-av", !!pic);
+  if (pic) {   // Clean: the button is the picture the feed shows for the session
+    const img = btn.firstElementChild?.classList.contains("di-img") ? btn.firstElementChild : hub.el("span", "di-img");
+    img.style.backgroundImage = pic;
+    btn.classList.remove("di-sym", "di-empty");
+    btn.style.color = "";
+    if (btn.firstChild !== img || btn.childNodes.length > 1) btn.replaceChildren(img);
+    return;
+  }
   paintIcon(btn, name, kind, base);
   const empty = !btn.firstChild;
   btn.classList.toggle("di-empty", empty);   // the hub has no default emoji, the button is visible anyway
@@ -194,6 +235,13 @@ function saveSym(name, sym, base) {
   const all = icons();
   if (sym) all[name] = { sym, for: base }; else delete all[name];
   writeJSON(KEY, all);
+  openFor = null;
+  repaint();
+}
+
+// Clean: the picked avatar of the set; empty means the theme picture
+function saveImg(name, file, base) {
+  writeImg(name, file, base);
   openFor = null;
   repaint();
 }
@@ -214,6 +262,7 @@ function repaint() {
     sync(r);
   }
   if (settingsRoot) paintSettings(settingsRoot);
+  sweepFeed();
   hub.redraw ? hub.redraw() : dispatchEvent(new Event("hub-redraw"));
 }
 
@@ -233,6 +282,7 @@ function button(cls, text, onClick) {
 
 // ───── session list: own sign and style ─────
 function paintRow(root) {
+  if (inClean()) return;   // Clean hides the signs of the list: nothing to change, the row stays the theme's
   const row = root.closest(".srow"), { kind, name } = root.dataset;
   let av = row?.querySelector(".nm .avatar");
   if (!av && kind === "hub" && root.dataset.icon) {   // the "Hub" row has no sign of its own, so we put one
@@ -271,6 +321,23 @@ function popover(name, kind, base) {
   const pop = hub.el("div", "di-pop");
   pop.setAttribute("role", "dialog");
   pop.setAttribute("aria-label", t("icon"));
+  if (inClean()) {
+    const list = avatars || [], cur = imgOf(name, base);
+    if (list.length) {
+      pop.append(hub.el("div", "di-title", t("avatars")));
+      const grid = hub.el("div", "di-grid");
+      for (const f of list) {
+        const b = button("di-opt di-av-opt", "", () => saveImg(name, f, base));
+        const img = hub.el("span", "di-img");
+        img.style.backgroundImage = imgUrl(f);
+        b.append(img);
+        b.title = f.replace(/\.png$/, "");
+        b.setAttribute("aria-pressed", String(cur === f));
+        grid.append(b);
+      }
+      pop.append(grid);
+    }
+  }
   for (const g of (sym ? symbols : groups) || []) {
     const list = sym ? g.icons.filter((s) => s.d) : g.icons;
     if (!list.length) continue;
@@ -290,7 +357,10 @@ function popover(name, kind, base) {
     const v = (window.prompt(t("emoji_prompt"), cur.emoji || "") || "").trim();
     if (v) saveEmoji(name, [...v].slice(0, 2).join(""));   // one sign, sometimes of two characters (a flag, a composite); the core will check
   }));
-  foot.append(button("btn quiet di-own", t("reset"), () => (sym ? saveSym(name, "", base) : saveEmoji(name, ""))));
+  foot.append(button("btn quiet di-own", t("reset"), () => {
+    writeImg(name, "", base);   // the picked avatar goes too (it only exists in Clean)
+    return sym ? saveSym(name, "", base) : saveEmoji(name, "");
+  }));
   pop.append(foot, hub.el("div", "di-hint", t("foot_hint", { tab: t(inTheme() ? "tab_look" : "tab_icons") })));
   return pop;
 }
@@ -327,6 +397,32 @@ function sync(root) {
   root.querySelector(".di-btn")?.setAttribute("aria-expanded", String(openFor === name));
   if (openFor === name && !pop) root.append(popover(name, root.dataset.kind, root.dataset.base));
   else if (openFor !== name && pop) pop.remove();
+}
+
+// ───── Clean: the picked avatar in the feed ─────
+// The feed avatar of a session is the theme's picture in one of two forms: the core draws the picture of a theme emoji as
+// .av.kit-img (background-image), and the theme itself draws a character as --clean-av on .av[data-clean-av] (and on .clean-av in a
+// reply). Where a session has a picked avatar, it goes there; data-di-img marks what we replaced, so after a reset the theme
+// picture comes back.
+function swap(node, name) {
+  const snap = hub.snapshot?.(), s = (snap?.sessions || []).find((x) => x.name === name);
+  if (!s) return;
+  const kind = kindOf(s, snap), file = imgOf(name, s.icon || (kind ? ROLE[kind][0] : ""));
+  if (!file && !("diImg" in node.dataset)) return;   // the marker is an empty string: check the key, not the value
+  const pic = file ? imgUrl(file) : themePic(name);
+  const kit = node.classList.contains("kit-img");
+  if (pic && (kit ? node.style.backgroundImage : node.style.getPropertyValue("--clean-av")) !== pic) {
+    if (kit) node.style.backgroundImage = pic; else node.style.setProperty("--clean-av", pic);
+  }
+  if (file) node.dataset.diImg = ""; else delete node.dataset.diImg;
+}
+function sweepFeed() {
+  if (!inClean()) return;
+  for (const av of document.querySelectorAll(".byline .av[data-clean-av], .byline .av.kit-img")) swap(av, av.closest(".byline")?.querySelector(":scope > b")?.textContent?.trim());
+  for (const box of document.querySelectorAll(".reply-box[data-clean]")) {
+    const a = box.closest(".row")?.querySelector(":scope > .g > .clean-av");
+    if (a) swap(a, box.dataset.clean);
+  }
 }
 
 // ───── move: emoji of older versions (kept only in this browser) go to the core ─────
@@ -425,7 +521,15 @@ export default function register(h) {
   if (blockInSettings()) hub.addOptions({ title: t("icons"), hint: t("icons_hint"), tab: "theme", render: drawSettings });
   else hub.addSettings({ id: "direction-icons", title: t("icons"), render: drawSettings });
   // symbols are drawn once the set is loaded: redraw so they replace the fallback sign
-  Promise.all([load("emoji.json"), load("symbols.json")]).then(([e, s]) => { groups = e; symbols = s; repaint(); });
+  Promise.all([load("emoji.json"), load("symbols.json"), load("avatars.json")]).then(([e, s, a]) => { groups = e; symbols = s; avatars = a; repaint(); });
+  // Clean puts its pictures after the page draws and on every change of the feed: take them over once per frame
+  let queued = false;
+  new MutationObserver(() => {
+    if (!inClean() || queued) return;
+    queued = true;
+    requestAnimationFrame(() => { queued = false; sweepFeed(); });
+  }).observe(document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ["data-clean-av"] });
+  addEventListener("hub-theme", repaint);   // the theme changed: the button and the feed follow it (Clean on or off)
   // a click outside the picker and Esc close it (the event path: the pressed button may already be out of the page by now);
   // another tab changed signs or settings: redraw
   document.addEventListener("click", (e) => {
@@ -434,5 +538,5 @@ export default function register(h) {
   document.addEventListener("keydown", (e) => {
     if (e.key === "Escape" && openFor) { openFor = null; document.querySelectorAll(".di-slot").forEach(sync); }
   });
-  addEventListener("storage", (e) => { if (e.key === KEY || e.key === SET) repaint(); });
+  addEventListener("storage", (e) => { if (e.key === KEY || e.key === SET || e.key === IMG) repaint(); });
 }

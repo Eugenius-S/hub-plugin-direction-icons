@@ -27,6 +27,24 @@ The UI is in English by default and in Russian when the hub language is Russian.
 - A direction or specialist finished its turn and you have not opened it yet: the sign in the list smoothly hops by 5 px,
   like an icon in the Mac dock. It can be turned off in Settings → Look → "Icons".
 
+## Clean theme: avatars
+
+The Clean theme (class `th-clean`) hides the signs of the session list and draws
+a character picture for every session in the feed. There the plugin does not replace that picture, it adds to it:
+
+- The header button shows the picture the feed shows for the session (the theme's own, or the one you picked), at the size and
+  corner of the theme's avatar.
+- The picker has a group "Avatars" before the emoji. A pick goes into the feed in place of the theme picture; "Reset" gives the
+  theme picture back. The pick is kept in this browser (the key `hub.directionIcons.img`); a newer icon of the session in the hub
+  wins over it, like for a symbol.
+- The row signs of the list are left alone (Clean hides them), so there are never two signs in one place.
+- In the standard theme none of this exists: no group, no change in the feed.
+
+**The set** is the `avatars` folder plus the list `avatars.json` (file names in the order shown). Files are PNG 160x160, because
+the hub serves a plugin's `.png` and not `.jpg`. Adding avatars is "put the files in `avatars` and add their names to
+`avatars.json`"; to convert JPEGs: `python -c "from PIL import Image; Image.open('a.jpg').convert('RGBA').save('a.png')"`. Four
+`placeholder-*.png` files stand in until the real set arrives.
+
 ## Install
 
 Settings → Plugins → paste the link to this repository → "Check and install". Needs a hub with plugin API 1.16 (the session

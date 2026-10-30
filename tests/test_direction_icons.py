@@ -4,6 +4,7 @@ import json
 import os
 import re
 import shutil
+import struct
 import subprocess
 import unittest
 
@@ -180,6 +181,59 @@ class Source(unittest.TestCase):
         r = subprocess.run([node, "--input-type=module", "--check"], input=read("main.js"), capture_output=True,
                            text=True, encoding="utf-8")
         self.assertEqual(r.returncode, 0, r.stderr)
+
+
+class CleanAvatars(unittest.TestCase):
+    """The Clean theme: its own character avatars in the feed. The plugin adds a set of avatars to the picker and keeps the
+    theme's own picture; in the standard theme nothing changes."""
+
+    def names(self):
+        names = json.loads(read("avatars.json"))
+        self.assertIsInstance(names, list)
+        return names
+
+    def test_every_listed_avatar_is_a_png_file_of_the_plugin(self):
+        # the page serves only .html .css .js .svg .json .png .woff2 from /ext/<plugin>/, so the set is png (a jpg is not served)
+        names = self.names()
+        self.assertGreaterEqual(len(names), 4)
+        self.assertEqual(len(names), len(set(names)))
+        for n in names:
+            self.assertRegex(n, r"^[a-z0-9]+(-[a-z0-9]+)*\.png$", n)
+            with open(os.path.join(ROOT, "avatars", n), "rb") as f:
+                head = f.read(24)
+            self.assertEqual(head[:8], b"\x89PNG\r\n\x1a\n", n)
+            self.assertEqual(struct.unpack(">II", head[16:24]), (160, 160), n)   # the size of the theme set (160x160)
+
+    def test_no_file_outside_the_list(self):
+        on_disk = set(os.listdir(os.path.join(ROOT, "avatars")))
+        self.assertEqual(on_disk - set(self.names()), set())      # adding is "put the files and the list", no orphans
+
+    def test_the_set_is_loaded_and_offered_only_in_clean(self):
+        js = read("main.js")
+        self.assertIn('const inClean = () => document.documentElement.classList.contains("th-clean")', js)
+        self.assertIn('load("avatars.json")', js)
+        self.assertRegex(js, r'if \(inClean\(\)\) \{[^}]*t\("avatars"\)')      # the group is built under the Clean check
+        self.assertIn('"hub.directionIcons.img"', js)             # the choice has a key of its own, the old records stay as they were
+
+    def test_the_standard_theme_stays_as_before(self):
+        js, css = read("main.js"), read("style.css")
+        self.assertRegex(js, r"function paintRow\(root\) \{\n  if \(inClean\(\)\) return;")   # the Clean list hides signs: not touched
+        for sel in re.findall(r"^([^\n{]*\.di-(?:img|av)[^\n{]*)\{", css, re.M):
+            self.assertIn("th-clean", sel, sel)                   # every rule of the avatars is Clean-only (the rest of the CSS is old)
+        self.assertRegex(css, r"html\.th-clean \.di-btn \{[^}]*width")
+
+    def test_the_theme_picture_is_replaced_only_where_the_theme_drew_it(self):
+        js = read("main.js")
+        self.assertIn('.byline .av[data-clean-av]', js)           # the feed avatar of the theme, never a letter or an emoji of the core
+        self.assertIn('.byline .av.kit-img', js)                  # and the picture of a theme emoji, which the core draws as background-image
+        self.assertIn('.reply-box[data-clean]', js)
+        self.assertIn("node.dataset.diImg = \"\"", js)            # what we replaced is marked, so a reset gives the theme picture back
+        self.assertIn('"diImg" in node.dataset', js)              # the marker is an empty string: it is checked by key (a falsy value lost the reset)
+        self.assertIn('addEventListener("hub-theme"', js)
+
+    def test_the_strings_of_the_set(self):
+        self.assertEqual(node_eval("en", 't("avatars")'), "Avatars")
+        self.assertEqual(node_eval("ru", 't("avatars")'), "Аватарки")
 
 
 class Languages(unittest.TestCase):

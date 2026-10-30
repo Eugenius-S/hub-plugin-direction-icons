@@ -1,14 +1,14 @@
 {
   "name": "direction-icons",
   "icon": "icon.png",
-  "description": "A personal icon for every chat in the list: pick it with the button left of the title. An emoji icon shows everywhere, in Telegram and on other devices. Style and color are in Settings → Look → Icons; the icon of a chat with an unread result hops.",
+  "description": "A personal icon for every chat in the list: pick it with the button left of the title. An emoji icon shows everywhere, in Telegram and on other devices. Style and color are in Settings → Look → Icons; the icon of a chat with an unread result hops. In the Clean theme it also offers avatars.",
   "why": "You see the chat you need at a glance",
-  "version": "1.9.2",
+  "version": "1.10.0",
   "hub": "^1.16",
   "web": "main.js",
   "i18n": {
     "ru": {
-      "description": "Свой значок у каждого чата в списке: выбирается кнопкой слева от названия. Эмодзи виден везде, в Telegram и на других устройствах. Стиль (эмодзи или контурные значки) и цвет меняются в «Настройки» → «Вид» → «Иконки», а значок чата с непрочитанным итогом подпрыгивает.",
+      "description": "Свой значок у каждого чата в списке: выбирается кнопкой слева от названия. Эмодзи виден везде, в Telegram и на других устройствах. Стиль (эмодзи или контурные значки) и цвет меняются в «Настройки» → «Вид» → «Иконки», а значок чата с непрочитанным итогом подпрыгивает. В теме Clean есть и аватарки.",
       "why": "Нужный чат видно с одного взгляда"
     }
   }

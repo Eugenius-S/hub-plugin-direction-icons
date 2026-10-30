@@ -46,3 +46,10 @@
 .di-set-title { margin-top: var(--space-2); font-size: var(--text-sm); font-weight: 600; }
 .di-set .hint { margin: 0; }
 .di-set .opt small { display: block; color: var(--muted-foreground); font-size: var(--text-xs); }
+/* Clean theme (html.th-clean): the button is the avatar the theme draws in the feed, same size and corner as there; the set of avatars
+   in the picker. The standard theme has none of this */
+html.th-clean .di-btn { width: 32px; height: 32px; border-radius: 6px; }
+html.th-clean .di-btn.di-av { border-color: transparent; }
+html.th-clean .di-img { display: block; width: 100%; height: 100%; border-radius: inherit; background: center / cover no-repeat; }
+html.th-clean .di-opt.di-av-opt { overflow: hidden; }
+html.th-clean .di-av-opt .di-img { border-radius: 6px; }
