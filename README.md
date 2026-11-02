@@ -40,6 +40,8 @@ session in the feed. There the plugin does not replace that picture, it adds to 
 - The picker has a group "Avatars" before the emoji. A pick goes into the feed in place of the theme picture; "Reset" gives the
   theme picture back. The pick is kept in this browser (the key `hub.directionIcons.img`); a newer icon of the session in the hub
   wins over it, like for a symbol.
+- A specialist with no sign of its own shows the theme's character picture in the list row too (a picked symbol, a picked avatar
+  and an emoji of the core win over it); a direction keeps the gray outline symbol there, 16px glyph in the 24px box.
 - A direction that was never given an avatar shows one of the 16 base avatars (the same in the header button and in the feed); a pick or an
   emoji of the core that the theme has a picture for stays as it was.
 - An avatar and an outline symbol are two picks of one sign: a picked avatar stands in the list row and in the header, a picked

@@ -67,7 +67,7 @@ html.th-clean .di-opt.di-sym[aria-pressed="true"] { color: var(--c-t1, var(--for
 /* Clean hides the avatar of a list row; the outline sign of a specialist or a direction stays, in the room of the theme's own 24 px avatar */
 html.th-clean .list .srow .nm:has(> .avatar.di-sym, > .avatar.di-pic) { display: flex; align-items: center; gap: 8px; }
 html.th-clean .list .srow .nm > .avatar.di-sym { display: inline-flex; align-items: center; justify-content: center; flex: none; width: 24px; height: 24px;
-  font-size: 18px; line-height: 1; color: var(--c-t2, var(--muted-foreground)); }
+  font-size: 16px; line-height: 1; color: var(--c-t2, var(--muted-foreground)); }
 html.th-clean .list .srow[aria-current="true"] .nm > .avatar.di-sym { color: var(--c-t1, var(--foreground)); }
-/* a picked avatar in the list row: the same 24 px place and corner as the outline sign */
+/* an avatar in the list row (picked, or the theme's one of a specialist): the same 24 px place and corner as the outline sign, whose glyph is 20 px in it */
 html.th-clean .list .srow .nm > .avatar.di-pic { display: inline-block; flex: none; width: 24px; height: 24px; border-radius: 6px; background: center / cover no-repeat; }

@@ -173,6 +173,13 @@ const defaultImg = (name, kind) => {
   const base = baseList();
   return kind === "direction" && base.length && !themeKit()[ownEmoji(name)] ? base[hashOf(name) % base.length] : "";
 };
+// the picture of a list row in Clean: the picked avatar; a specialist with no sign of its own (no picked symbol, no emoji of the core)
+// shows the picture the feed draws for it. A direction keeps the outline symbol in the list
+const rowPic = (name, kind, base, own) => {
+  const picked = imgOf(name, base);
+  if (picked) return imgUrl(picked);
+  return kind === "agent" && !own && !symOf(name, base) ? themePic(name) : "";
+};
 // what the session looks like in Clean: the picked avatar, else the default base one of a direction, else the theme picture
 // a symbol picked by hand takes the place of the picture: the button then shows the symbol, as the list does
 const cleanPic = (name, base, kind) => {
@@ -322,10 +329,10 @@ function paintRow(root) {
     row.querySelector(".nm")?.prepend(av, document.createTextNode(" "));
   }
   if (!av) return;   // the session has no sign (a worker without an icon): nothing to change
-  const file = inClean() && imgOf(name, root.dataset.base);
-  if (file) {   // the picked avatar stands in the row as in the header
+  const pic = inClean() && rowPic(name, kind, root.dataset.base, !!root.dataset.own);
+  if (pic) {   // the picked avatar (a specialist: the theme's one) stands in the row as in the header
     av.className = "avatar di-pic";
-    av.style.backgroundImage = imgUrl(file);
+    av.style.backgroundImage = pic;
     av.style.color = "";
     av.removeAttribute("role");
     av.removeAttribute("aria-label");
@@ -346,10 +353,11 @@ function paintRow(root) {
 function renderRow(root, snap, { session }) {
   root.classList.add("di-mark");
   const kind = kindOf(session, snap);
-  if (!kind) { delete root.dataset.icon; return; }
+  if (!kind) { delete root.dataset.icon; delete root.dataset.own; return; }
   root.dataset.name = session.name;
   root.dataset.kind = kind;
   root.dataset.base = session.icon || ROLE[kind][0];
+  if (session.own_icon) root.dataset.own = "1"; else delete root.dataset.own;   // an emoji the owner picked in the core is their choice, no picture over it
   if (symbolStyle()) root.dataset.icon = "1"; else delete root.dataset.icon;   // an emoji is the core icon, the row is left alone
   migrate(snap);
   requestAnimationFrame(() => paintRow(root));

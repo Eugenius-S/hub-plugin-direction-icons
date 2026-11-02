@@ -311,6 +311,31 @@ class PickOneSign(unittest.TestCase):
         self.assertIn('av.className = "avatar di-pic"', js)
         self.assertRegex(css, r"html\.th-clean \.list \.srow \.nm > \.avatar\.di-pic \{[^}]*width: 24px")
 
+    def test_a_specialist_shows_the_theme_picture_in_the_list_a_direction_the_outline(self):
+        """02.11 (d463226): Clean shows monsters for specialists and gray outline icons for directions."""
+        theme = "store['hub.theme'] = JSON.stringify({ theme: { avatars_url: { '🧭': 'k/compass.png', p1: 'k/m1.jpg', p2: 'k/m2.jpg' } } });"
+        r = node_run(theme + "console.log(JSON.stringify({"
+                     "agent: rowPic('s', 'agent', '🤖', false), direction: rowPic('d', 'direction', '🧭', false),"
+                     "own: rowPic('s', 'agent', '🤖', true), hub: rowPic('h', 'hub', '🏠', false) }));")
+        self.assertTrue(r["agent"].startswith('url("k/m'), r)
+        self.assertEqual((r["direction"], r["own"], r["hub"]), ("", "", ""))
+
+    def test_a_picked_symbol_or_avatar_beats_the_theme_picture_of_a_specialist(self):
+        theme = "store['hub.theme'] = JSON.stringify({ theme: { avatars_url: { p1: 'k/m1.jpg' } } });"
+        r = node_run(theme + "saveSym('s', 'house', '🤖'); const a = rowPic('s', 'agent', '🤖', false);"
+                     "saveImg('s', 'a.png', '🤖'); const b = rowPic('s', 'agent', '🤖', false);"
+                     "console.log(JSON.stringify({ a, b }));")
+        self.assertEqual(r, {"a": "", "b": 'url("avatars/a.png")'})
+
+    def test_the_row_remembers_an_emoji_the_owner_picked_in_the_core(self):
+        self.assertIn('if (session.own_icon) root.dataset.own = "1"', read("main.js"))
+
+    def test_the_outline_glyph_of_the_list_is_a_little_smaller(self):
+        css = read("style.css")
+        rule = re.search(r"html\.th-clean \.list \.srow \.nm > \.avatar\.di-sym \{([^}]*)\}", css)
+        self.assertIsNotNone(rule)
+        self.assertIn("font-size: 16px", rule.group(1))
+
 
 class ThemeLook(unittest.TestCase):
     """02.11 (d452796): the list signs are outline symbols in the style and color of the theme."""
@@ -371,7 +396,7 @@ class ThemeLook(unittest.TestCase):
         man = json.loads(read("hub-plugin.json"))
         self.assertLessEqual(len(man["description"]), 300)
         self.assertLessEqual(len(man["i18n"]["ru"]["description"]), 300)
-        self.assertEqual(man["version"], "1.13.2")
+        self.assertEqual(man["version"], "1.14.0")
 
 
 class Languages(unittest.TestCase):
