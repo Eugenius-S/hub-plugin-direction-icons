@@ -20,13 +20,15 @@
 // Style, for all signs of the list: specialists, directions, workers. Emoji or a symbol: an outline Icons8 icon (the
 // m_outlined pack, like every icon of the page) drawn from its SVG path in the text color, the same on every OS.
 // A symbol with no choice of its own follows the session emoji (a palette for the artist emoji), otherwise the sign of its
-// role. Style, symbol color (its own or random, stable per session) and hop: a block in the Settings tab (API 1.13; on an
-// old hub, a tab of its own, "Icons").
+// role. Style (outline by default), symbol color (the color of the theme by default, or the owner's own) and hop: a block in
+// the Settings tab (API 1.13; on an old hub, a tab of its own, "Icons"). If the theme brings its own icon of the same name
+// (Theme API 1.3, icons_url), it is drawn instead, as a mask in the same color.
 //
-// The Clean theme (class th-clean on <html>) hides the signs of the list and draws a character picture for every session in the
-// feed. There the plugin does not replace the picture: the button shows it, and the picker gets a group "Avatars" (the set is
-// avatars.json + the avatars folder) next to the emoji. The choice is kept in this browser (its own key) and puts the chosen
-// picture into the feed in place of the theme one; Reset gives the theme picture back. In the standard theme none of this exists.
+// The Clean theme (class th-clean on <html>) draws a character picture for every session in the feed. The list there shows
+// the same gray outline symbol as in any theme (the theme tokens give the color); the button in the header shows the
+// picture, and the picker gets a group "Avatars" (the set is avatars.json + the avatars folder) next to the emoji. The
+// choice is kept in this browser (its own key) and puts the chosen picture into the feed in place of the theme one; Reset
+// gives the theme picture back. In the standard theme there are no avatars.
 //
 // UI strings: en by default, ru when the hub language is Russian; the language is picked at use time by hub.lang.
 const STR = {
@@ -45,8 +47,8 @@ const STR = {
     style_emoji: "Emoji",
     style_sym: "Symbols",
     set_style: "Style for all signs of the list",
-    hint_sym: "Symbols: outline icons, the same on every system. The sign of the hub, a specialist or a direction is set with the button to the left of the title in its header.",
-    rnd_title: "Random: its own for each session",
+    hint_sym: "Symbols: outline icons in the style and color of the current theme. The sign of the hub, a specialist or a direction is set with the button to the left of the title in its header.",
+    rnd_title: "Theme color: the icons take the color of the current theme",
     own_color: "Custom color",
     set_color: "Symbol color",
     set_hop: "Hop",
@@ -69,8 +71,8 @@ const STR = {
     style_emoji: "Эмодзи",
     style_sym: "Символы",
     set_style: "Стиль для всех знаков списка",
-    hint_sym: "Символы: контурные значки, одинаковые в любой системе. Знак хаба, специалиста или направления выбирается кнопкой слева от названия в его шапке.",
-    rnd_title: "Случайный: свой у каждой сессии",
+    hint_sym: "Символы: контурные значки в стиле и цвете текущей темы. Знак хаба, специалиста или направления выбирается кнопкой слева от названия в его шапке.",
+    rnd_title: "Цвет темы: значки берут цвет текущей темы",
     own_color: "Свой цвет",
     set_color: "Цвет символов",
     set_hop: "Прыжок",
@@ -144,9 +146,12 @@ function writeImg(name, file, base) {
   writeJSON(IMG, all);
 }
 // the picture the theme draws for a session (its pictureFor): the picture of the core emoji or one of the set by a hash of the name
-const themeKit = () => {
-  try { return JSON.parse(localStorage.getItem("hub.theme") || "null")?.theme?.avatars_url || {}; } catch { return {}; /* no theme */ }
+const themeFiles = (key) => {
+  try { return JSON.parse(localStorage.getItem("hub.theme") || "null")?.theme?.[key] || {}; } catch { return {}; /* no theme */ }
 };
+const themeKit = () => themeFiles("avatars_url");
+// the icon the theme draws under this name (Theme API 1.3 icons_url), if it has one
+const themeIcon = (sym) => (sym && themeFiles("icons_url")[sym]) || "";
 const ownEmoji = (name) => (hub.snapshot?.()?.sessions || []).find((x) => x.name === name)?.icon;
 const hashOf = (name) => {
   let h = 5381;
@@ -177,7 +182,7 @@ const cleanPic = (name, base, kind) => {
 function settings() {
   const s = readJSON(SET);
   return {
-    style: s.style === "sym" || s.style === "emoji" ? s.style : Object.keys(icons()).some((n) => stored(n).sym) ? "sym" : "emoji",
+    style: s.style === "emoji" ? "emoji" : "sym",   // outline icons of the theme unless the owner picked emoji
     color: typeof s.color === "string" ? s.color : "",
     hop: s.hop !== false,
   };
@@ -206,28 +211,24 @@ function glyph(d) {
   svg.append(p);
   return svg;
 }
-function colorOf(name) {
-  const c = settings().color;
-  if (c) return c;
-  let h = 0;
-  for (const ch of name) h = (h * 31 + ch.codePointAt(0)) >>> 0;
-  return COLORS[h % COLORS.length];   // random but stable: derived from the session name
-}
+// the owner's own color wins; otherwise the glyph takes the color of the theme (style.css: .di-sym)
+const colorOf = () => settings().color;
 
 // what to draw: { emoji } or { code } (a symbol); base is the session icon in the core (s.icon, its own or the old one) or the role sign
 function look(name, kind, base) {
   const emoji = base || ROLE[kind][0], sym = editable(kind) ? symOf(name, base) : "";
   if (!symbolStyle()) return { emoji: emoji || (kind === "hub" ? HUB_EMOJI : "") };
-  const code = (sym && pathOf(sym)) || pathOf(BY_EMOJI[emoji.replace(/️/g, "")])
-    || (kind === "direction" ? pathOf(COMPASS) : pathOf(ROLE[kind][1]));
-  return code ? { code } : { emoji };
+  const pick = [sym, BY_EMOJI[emoji.replace(/️/g, "")], kind === "direction" ? COMPASS : ROLE[kind][1]].find((n) => n && pathOf(n));
+  return pick ? { code: pathOf(pick), sym: pick } : { emoji };
 }
 
 function paintIcon(node, name, kind, base) {
-  const { emoji, code } = look(name, kind, base);
+  const { emoji, code, sym } = look(name, kind, base), own = themeIcon(sym);
   node.classList.toggle("di-sym", !!code);
-  node.style.color = code ? colorOf(name) : "";
-  if (code) node.replaceChildren(glyph(code)); else node.textContent = emoji;
+  node.classList.toggle("di-kit", !!code && !!own);
+  node.style.color = code ? colorOf() : "";
+  node.style.setProperty("--di-kit", own ? `url("${own}")` : "");   // a theme icon is drawn as a mask in the text color
+  if (code) node.replaceChildren(own ? hub.el("span", "di-mask") : glyph(code)); else node.textContent = emoji;
 }
 
 function paintButton(btn, name, kind, base) {
@@ -301,15 +302,6 @@ function button(cls, text, onClick) {
 function paintRow(root) {
   const row = root.closest(".srow"), { kind, name } = root.dataset;
   let av = row?.querySelector(".nm .avatar");
-  if (inClean()) {   // Clean hides the signs of the list; a specialist or a direction gets its picture back (style.css .di-row-av)
-    if (av && (kind === "agent" || kind === "direction")) {
-      const pic = cleanPic(name, root.dataset.base, kind);
-      av.classList.add("di-row-av");
-      if (av.style.backgroundImage !== pic) av.style.backgroundImage = pic;
-    }
-    return;
-  }
-  if (av?.classList.contains("di-row-av")) { av.classList.remove("di-row-av"); av.style.backgroundImage = ""; }   // left Clean
   if (!av && kind === "hub" && root.dataset.icon) {   // the "Hub" row has no sign of its own, so we put one
     av = hub.el("span", "avatar");
     row.querySelector(".nm")?.prepend(av, document.createTextNode(" "));
@@ -371,7 +363,7 @@ function popover(name, kind, base) {
     for (const s of list) {
       const b = sym ? button("di-opt di-sym", "", () => saveSym(name, s.n, base))
         : button("di-opt", s, () => saveEmoji(name, s));
-      if (sym) { b.append(glyph(s.d)); b.style.color = colorOf(name); b.title = s.n; }
+      if (sym) { b.append(glyph(s.d)); b.style.color = colorOf(); b.title = s.n; }
       b.setAttribute("aria-pressed", String(sym ? cur.code === s.d : cur.emoji === s));
       grid.append(b);
     }

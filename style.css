@@ -59,7 +59,13 @@ html.th-clean .di-pop .di-opt.di-sym:hover { color: var(--c-t1, var(--foreground
 html.th-clean .di-opt:hover { background: var(--c-fill, var(--muted)); }
 html.th-clean .di-opt[aria-pressed="true"] { border-color: var(--c-line-strong, var(--border)); background: var(--c-fill, var(--muted)); }
 html.th-clean .di-opt.di-sym[aria-pressed="true"] { color: var(--c-t1, var(--foreground)) !important; }
-/* Clean hides the avatar of a list row; a specialist or a direction gets its picture back (paintRow puts .di-row-av on it; the Hub row is the theme's own) */
-html.th-clean .list .srow .nm:has(> .avatar.di-row-av) { display: flex; align-items: center; gap: 8px; }
-html.th-clean .list .srow .nm > .avatar.di-row-av { display: block; flex: none; width: 24px; height: 24px; border-radius: 6px;
-  background: center / cover no-repeat; font-size: 0; color: transparent; }
+/* a sign of a list row is one flat glyph in the text color of the theme; a sign picture of the theme itself is a mask of the same color */
+.di-mask { display: block; width: 1.25em; height: 1.25em; background: currentColor;
+  -webkit-mask: var(--di-kit) center / contain no-repeat; mask: var(--di-kit) center / contain no-repeat; }
+.srow .avatar.di-sym { color: var(--muted-foreground); }
+.srow[aria-current="true"] .avatar.di-sym { color: var(--foreground); }
+/* Clean hides the avatar of a list row; the outline sign of a specialist or a direction stays, in the room of the theme's own 24 px avatar */
+html.th-clean .list .srow .nm:has(> .avatar.di-sym) { display: flex; align-items: center; gap: 8px; }
+html.th-clean .list .srow .nm > .avatar.di-sym { display: inline-flex; align-items: center; justify-content: center; flex: none; width: 24px; height: 24px;
+  font-size: 18px; line-height: 1; color: var(--c-t2, var(--muted-foreground)); }
+html.th-clean .list .srow[aria-current="true"] .nm > .avatar.di-sym { color: var(--c-t1, var(--foreground)); }

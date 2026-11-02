@@ -10,9 +10,11 @@ The UI is in English by default and in Russian when the hub language is Russian.
 - **Style and color — in the "Look" tab:** Settings → Look → the "Icons" block. The hop of an unread direction is there too.
 
 - Style applies to all signs of the list (hub, specialists, directions, workers), Settings → Look → the "Icons" block:
-  emoji or symbols — outline [Icons8](https://icons8.com) icons (the same pack as the icons of the hub page), drawn from
-  their SVG in the text color, so they look the same on every system and need no font. The symbol color (from a
-  set, your own, or "random", stable per session) and the hop are there too. A symbol with no choice of its own follows the
+  symbols (the default) or emoji. Symbols are outline [Icons8](https://icons8.com) icons (the same pack as the icons of the hub page),
+  one flat glyph with no dot or badge, drawn in the muted text color of the current theme (the active row: the main text
+  color), so they follow the theme and its dark mode with no reload. If the theme ships an icon of its own under the same
+  name (Theme API 1.3, `icons_url`), it is used as a mask in the same color. The symbol color ("Theme color" by default,
+  a set, or your own) and the hop are there too. A symbol with no choice of its own follows the
   session emoji (🎨 → palette), otherwise the sign of its role. The header only has the sign picker in the current style;
   switching the style does not lose a symbol. The symbol set is `symbols.json`.
 - The button is for the hub, specialists and directions; workers have none. The hub has no default emoji (a "+" button), its
@@ -29,8 +31,9 @@ The UI is in English by default and in Russian when the hub language is Russian.
 
 ## Clean theme: avatars
 
-The Clean theme (class `th-clean`) hides the signs of the session list and draws
-a character picture for every session in the feed. There the plugin does not replace that picture, it adds to it:
+In the list of the Clean theme (class `th-clean`) the sign of a direction or specialist is the same gray outline symbol as in
+other themes (the plugin shows it there; the theme alone hides row pictures). The theme draws a character picture for every
+session in the feed. There the plugin does not replace that picture, it adds to it:
 
 - The header button shows the picture the feed shows for the session (the theme's own, or the one you picked), at the size and
   corner of the theme's avatar.
@@ -39,7 +42,7 @@ a character picture for every session in the feed. There the plugin does not rep
   wins over it, like for a symbol.
 - A direction that was never given an avatar shows one of the 16 base avatars (the same in the header button and in the feed); a pick or an
   emoji of the core that the theme has a picture for stays as it was.
-- The row signs of the list are left alone (Clean hides them), so there are never two signs in one place.
+- The row signs of the list are outline symbols, not pictures, so there are never two pictures in one place.
 - In the standard theme none of this exists: no group, no change in the feed.
 
 **The set** is the `avatars` folder plus the list `avatars.json` (file names in the order shown). Files are PNG 160x160, because

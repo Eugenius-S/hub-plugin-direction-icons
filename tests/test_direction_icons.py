@@ -77,7 +77,7 @@ class Symbols(unittest.TestCase):
         for gone in ("Segoe", "SF Pro", "symbolFont", "FONTS", "fontFamily", "hint_nofont"):
             self.assertNotIn(gone, js, gone)
         self.assertIn('createElementNS(SVG, "path")', js)           # drawn from the path of the set
-        self.assertIn("COLORS[h % COLORS.length]", js)
+        self.assertIn("const colorOf = () => settings().color;", js)   # no color of its own: the glyph takes the theme color from CSS
         css = read("style.css")
         self.assertIn(".di-svg", css)
         self.assertIn("fill: currentColor", css)
@@ -217,21 +217,20 @@ class CleanAvatars(unittest.TestCase):
 
     def test_the_standard_theme_stays_as_before(self):
         js, css = read("main.js"), read("style.css")
-        self.assertRegex(js, r"function paintRow\(root\) \{[^\n]*\n[^\n]*\n  let av = [^\n]*\n  if \(inClean\(\)\) \{")   # Clean branch comes first: the rest is the standard theme
-        self.assertIn('av?.classList.contains("di-row-av")', js)  # leaving Clean takes the row picture away again
+        self.assertNotIn("di-row-av", js + css)                   # the row has no picture of its own any more, in Clean it is the same outline symbol
         for sel in re.findall(r"^([^\n{]*\.di-(?:img|av)[^\n{]*)\{", css, re.M):
             self.assertIn("th-clean", sel, sel)                   # every rule of the avatars is Clean-only (the rest of the CSS is old)
         self.assertRegex(css, r"html\.th-clean \.di-btn \{[^}]*width")
 
-    def test_specialists_and_directions_get_their_row_picture_back_in_clean(self):
+    def test_clean_shows_the_outline_symbol_in_the_list_again(self):
         # 02.11: clean.css hides `.list .srow .nm > .avatar` (only the Hub row is its exception), so the list had no icons
-        js, css = read("main.js"), read("style.css")
-        self.assertRegex(js, r'kind === "agent" \|\| kind === "direction"')   # the Hub row is the theme's own, others are not touched
-        self.assertIn('av.classList.add("di-row-av")', js)
-        rule = re.search(r"html\.th-clean \.list \.srow \.nm > \.avatar\.di-row-av \{([^}]*)\}", css)
+        css = read("style.css")
+        rule = re.search(r"html\.th-clean \.list \.srow \.nm > \.avatar\.di-sym \{([^}]*)\}", css)
         self.assertIsNotNone(rule)                                # one class more than the theme's own selector, no !important
-        self.assertIn("display: block", rule.group(1))
-        self.assertNotIn("!important", css[css.index("di-row-av"):])
+        self.assertIn("display: inline-flex", rule.group(1))
+        self.assertIn("var(--c-t2, var(--muted-foreground))", rule.group(1))   # the gray of the theme, not our own palette
+        self.assertNotIn("!important", rule.group(1))             # the picker rules above have it, the row does not need it
+        self.assertIn("html.th-clean .list .srow .nm:has(> .avatar.di-sym)", css)
 
     def test_the_theme_picture_is_replaced_only_where_the_theme_drew_it(self):
         js = read("main.js")
@@ -261,6 +260,51 @@ class CleanAvatars(unittest.TestCase):
     def test_the_strings_of_the_set(self):
         self.assertEqual(node_eval("en", 't("avatars")'), "Avatars")
         self.assertEqual(node_eval("ru", 't("avatars")'), "Аватарки")
+
+
+class ThemeLook(unittest.TestCase):
+    """02.11 (d452796): the list signs are outline symbols in the style and color of the theme."""
+
+    def test_outline_is_the_default_and_emoji_stays_a_choice(self):
+        js = read("main.js")
+        self.assertIn('style: s.style === "emoji" ? "emoji" : "sym"', js)
+        self.assertIn('color: typeof s.color === "string" ? s.color : ""', js)   # no random palette: empty means the theme color
+
+    def test_the_color_comes_from_the_theme_tokens(self):
+        css = read("style.css")
+        self.assertRegex(css, r"\.srow \.avatar\.di-sym \{ color: var\(--muted-foreground\); \}")
+        self.assertRegex(css, r'\.srow\[aria-current="true"\] \.avatar\.di-sym \{ color: var\(--foreground\); \}')
+
+    def test_a_theme_icon_of_the_same_name_is_drawn_as_a_mask(self):
+        js, css = read("main.js"), read("style.css")
+        self.assertIn('themeFiles("icons_url")', js)
+        self.assertIn("const themeIcon = (sym)", js)
+        self.assertIn('node.style.setProperty("--di-kit"', js)
+        self.assertIn('hub.el("span", "di-mask")', js)
+        rule = re.search(r"\.di-mask \{([^}]*)\}", css)
+        self.assertIsNotNone(rule)
+        self.assertIn("background: currentColor", rule.group(1))
+        self.assertIn("mask: var(--di-kit)", rule.group(1))
+
+    def test_the_theme_change_repaints_without_a_reload(self):
+        js = read("main.js")
+        self.assertIn('addEventListener("hub-theme", repaint)', js)
+
+    def test_one_monochrome_glyph_no_dot_no_badge_no_plate(self):
+        js, css = read("main.js"), read("style.css")
+        block = re.findall(r"[^\n]*\.avatar\.di-sym[^\n]*(?:\n[^\n{}]*)?", css)
+        self.assertTrue(block)
+        for line in block:
+            for bad in ("background", "border", "box-shadow", "::before", "::after", "radius"):
+                self.assertNotIn(bad, line, line)
+        for bad in ("di-dot", "di-badge", "di-plate"):
+            self.assertNotIn(bad, js + css, bad)
+
+    def test_manifest_descriptions_fit_the_catalog_limit(self):
+        man = json.loads(read("hub-plugin.json"))
+        self.assertLessEqual(len(man["description"]), 300)
+        self.assertLessEqual(len(man["i18n"]["ru"]["description"]), 300)
+        self.assertEqual(man["version"], "1.13.0")
 
 
 class Languages(unittest.TestCase):
