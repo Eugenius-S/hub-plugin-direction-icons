@@ -42,7 +42,8 @@ session in the feed. There the plugin does not replace that picture, it adds to 
   wins over it, like for a symbol.
 - A direction that was never given an avatar shows one of the 16 base avatars (the same in the header button and in the feed); a pick or an
   emoji of the core that the theme has a picture for stays as it was.
-- The row signs of the list are outline symbols, not pictures, so there are never two pictures in one place.
+- An avatar and an outline symbol are two picks of one sign: a picked avatar stands in the list row and in the header, a picked
+  symbol stands in both too, and picking one drops the other. A session with no pick keeps the gray outline symbol in the list.
 - In the standard theme none of this exists: no group, no change in the feed.
 
 **The set** is the `avatars` folder plus the list `avatars.json` (file names in the order shown). Files are PNG 160x160, because

@@ -230,7 +230,7 @@ class CleanAvatars(unittest.TestCase):
         self.assertIn("display: inline-flex", rule.group(1))
         self.assertIn("var(--c-t2, var(--muted-foreground))", rule.group(1))   # the gray of the theme, not our own palette
         self.assertNotIn("!important", rule.group(1))             # the picker rules above have it, the row does not need it
-        self.assertIn("html.th-clean .list .srow .nm:has(> .avatar.di-sym)", css)
+        self.assertIn("html.th-clean .list .srow .nm:has(> .avatar.di-sym, > .avatar.di-pic)", css)
 
     def test_the_theme_picture_is_replaced_only_where_the_theme_drew_it(self):
         js = read("main.js")
@@ -254,12 +254,62 @@ class CleanAvatars(unittest.TestCase):
         self.assertIn('f.startsWith("base-")', js)
         self.assertRegex(js, r'kind === "direction" && base\.length')   # only a direction, only when the set has base ones
         self.assertIn("base[hashOf(name) % base.length]", js)     # by a hash of the name, stable per session
-        self.assertIn("imgOf(name, base) || defaultImg(name, kind)", js)   # the picked avatar comes first
+        self.assertIn("imgOf(name, s.icon || (kind ? ROLE[kind][0] : \"\")) || defaultImg(name, kind)", js)   # the picked avatar comes first in the feed
+        self.assertIn("const picked = imgOf(name, base);", js)    # and in the button
         self.assertIn('"diImg" in node.dataset', js)              # a reset still gives the theme picture back
 
     def test_the_strings_of_the_set(self):
         self.assertEqual(node_eval("en", 't("avatars")'), "Avatars")
         self.assertEqual(node_eval("ru", 't("avatars")'), "Аватарки")
+
+
+def node_run(body):
+    """Run main.js in node with a fake localStorage and hub; `body` is JS that ends in console.log(JSON.stringify(...))."""
+    node = shutil.which("node")
+    if not node:
+        raise unittest.SkipTest("no node")
+    js = read("main.js").replace("export default function register", "function register")
+    prog = (
+        "const store = {}; const localStorage = { getItem: (k) => store[k] ?? null, setItem: (k, v) => { store[k] = String(v); } };\n"
+        "const document = { documentElement: { classList: { contains: () => globalThis.CLEAN } } };\n"
+        "globalThis.CLEAN = true;\n"
+        + js + "\nhub = { url: (f) => f, snapshot: () => ({ sessions: [] }), redraw() {} };\n"
+        "avatars = ['a.png', 'b.png', 'base-1.png']; symbols = [{ title: 'x', icons: [{ n: 'house', d: 'M0' }, { n: 'doc.text', d: 'M1' }] }];\n"
+        "repaint = () => {};\n" + body)
+    r = subprocess.run([node, "-e", prog], capture_output=True, text=True, encoding="utf-8")
+    if r.returncode:
+        raise AssertionError(r.stderr)
+    return json.loads(r.stdout)
+
+
+class PickOneSign(unittest.TestCase):
+    """Owner 02.11: an avatar and an outline symbol can both be picked; the pick stands in the list and in the header, and
+    picking one drops the other."""
+
+    def test_picking_an_avatar_drops_the_symbol_and_the_header_shows_it(self):
+        r = node_run("saveSym('x', 'house', '🧭'); saveImg('x', 'a.png', '🧭');"
+                     "console.log(JSON.stringify({ sym: symOf('x', '🧭'), img: imgOf('x', '🧭'), pic: cleanPic('x', '🧭', 'direction') }));")
+        self.assertEqual(r, {"sym": "", "img": "a.png", "pic": 'url("avatars/a.png")'})
+
+    def test_picking_a_symbol_drops_the_avatar_and_the_header_shows_the_symbol(self):
+        r = node_run("saveImg('x', 'a.png', '🧭'); saveSym('x', 'house', '🧭');"
+                     "console.log(JSON.stringify({ sym: symOf('x', '🧭'), img: imgOf('x', '🧭'), pic: cleanPic('x', '🧭', 'direction') }));")
+        self.assertEqual(r, {"sym": "house", "img": "", "pic": ""})   # no picture: the button draws the symbol, even over a base avatar
+
+    def test_reset_gives_the_default_back(self):
+        r = node_run("saveImg('x', 'a.png', '🧭'); saveImg('x', '', '🧭');"
+                     "console.log(JSON.stringify({ img: imgOf('x', '🧭'), pic: cleanPic('x', '🧭', 'direction') }));")
+        self.assertEqual(r["img"], "")
+        self.assertNotEqual(r["pic"], 'url("avatars/a.png")')
+
+    def test_the_picker_lights_only_the_real_pick(self):
+        js = read("main.js")
+        self.assertIn("!imgOf(name, base) && symOf(name, base) === s.n", js)   # not the look() fallback symbol, not under an avatar
+
+    def test_the_picked_avatar_stands_in_the_list_row(self):
+        js, css = read("main.js"), read("style.css")
+        self.assertIn('av.className = "avatar di-pic"', js)
+        self.assertRegex(css, r"html\.th-clean \.list \.srow \.nm > \.avatar\.di-pic \{[^}]*width: 24px")
 
 
 class ThemeLook(unittest.TestCase):

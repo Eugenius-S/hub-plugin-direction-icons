@@ -3,7 +3,7 @@
   "icon": "icon.png",
   "description": "A personal icon for every chat in the list: pick it with the button left of the title. By default an outline icon in the style and color of your theme; an emoji icon shows everywhere, in Telegram too. The icon of a chat with an unread result hops. Clean theme: avatars.",
   "why": "You see the chat you need at a glance",
-  "version": "1.13.1",
+  "version": "1.13.2",
   "hub": "^1.16",
   "web": "main.js",
   "i18n": {

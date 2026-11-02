@@ -25,10 +25,11 @@
 // (Theme API 1.3, icons_url), it is drawn instead, as a mask in the same color.
 //
 // The Clean theme (class th-clean on <html>) draws a character picture for every session in the feed. The list there shows
-// the same gray outline symbol as in any theme (the theme tokens give the color); the button in the header shows the
-// picture, and the picker gets a group "Avatars" (the set is avatars.json + the avatars folder) next to the emoji. The
-// choice is kept in this browser (its own key) and puts the chosen picture into the feed in place of the theme one; Reset
-// gives the theme picture back. In the standard theme there are no avatars.
+// the same gray outline symbol as in any theme (the theme tokens give the color) until a sign is picked; the button in the
+// header shows the picture, and the picker gets a group "Avatars" (the set is avatars.json + the avatars folder) next to the
+// emoji. The choice is kept in this browser (its own key) and puts the chosen picture into the list row, the header and the
+// feed in place of the theme one; picking a symbol instead drops the avatar (and the other way round); Reset gives the
+// defaults back. In the standard theme there are no avatars.
 //
 // UI strings: en by default, ru when the hub language is Russian; the language is picked at use time by hub.lang.
 const STR = {
@@ -173,8 +174,12 @@ const defaultImg = (name, kind) => {
   return kind === "direction" && base.length && !themeKit()[ownEmoji(name)] ? base[hashOf(name) % base.length] : "";
 };
 // what the session looks like in Clean: the picked avatar, else the default base one of a direction, else the theme picture
+// a symbol picked by hand takes the place of the picture: the button then shows the symbol, as the list does
 const cleanPic = (name, base, kind) => {
-  const f = imgOf(name, base) || defaultImg(name, kind);
+  const picked = imgOf(name, base);
+  if (picked) return imgUrl(picked);
+  if (symOf(name, base)) return "";
+  const f = defaultImg(name, kind);
   return f ? imgUrl(f) : themePic(name);
 };
 
@@ -249,10 +254,17 @@ function paintButton(btn, name, kind, base) {
   if (empty) btn.textContent = "+";
 }
 
+// a symbol and an avatar exclude each other: picking one drops the other (the sign of the list and of the header is one)
+function dropSym(name) {
+  const all = icons(), e = stored(name);
+  if (e.emoji) all[name] = { emoji: e.emoji }; else delete all[name];
+  writeJSON(KEY, all);
+}
+
 // the symbol is kept here (with the core emoji it was picked at); empty means back to default
 function saveSym(name, sym, base) {
   const all = icons();
-  if (sym) all[name] = { sym, for: base }; else delete all[name];
+  if (sym) { all[name] = { sym, for: base }; writeImg(name, "", base); } else delete all[name];
   writeJSON(KEY, all);
   openFor = null;
   repaint();
@@ -260,6 +272,7 @@ function saveSym(name, sym, base) {
 
 // Clean: the picked avatar of the set; empty means the theme picture
 function saveImg(name, file, base) {
+  if (file) dropSym(name);
   writeImg(name, file, base);
   openFor = null;
   repaint();
@@ -267,6 +280,7 @@ function saveImg(name, file, base) {
 
 // the emoji goes to the core: it writes session.iconed and the snapshot reaches all clients; empty means the default icon
 async function saveEmoji(name, emoji) {
+  writeImg(name, "", emoji);   // an emoji is a pick of its own: the avatar goes (the same emoji again would not change the core icon)
   openFor = null;
   repaint();
   const r = await hub.post("/api/session/icon", { session: name, icon: emoji || "" });
@@ -303,12 +317,20 @@ function button(cls, text, onClick) {
 function paintRow(root) {
   const row = root.closest(".srow"), { kind, name } = root.dataset;
   let av = row?.querySelector(".nm .avatar");
-  if (!av && kind === "hub" && root.dataset.icon) {   // the "Hub" row has no sign of its own, so we put one
+  if (!av && kind === "hub" && (root.dataset.icon || (inClean() && imgOf(name, root.dataset.base)))) {   // the "Hub" row has no sign of its own, so we put one
     av = hub.el("span", "avatar");
     row.querySelector(".nm")?.prepend(av, document.createTextNode(" "));
   }
   if (!av) return;   // the session has no sign (a worker without an icon): nothing to change
-  if (root.dataset.icon) {
+  const file = inClean() && imgOf(name, root.dataset.base);
+  if (file) {   // the picked avatar stands in the row as in the header
+    av.className = "avatar di-pic";
+    av.style.backgroundImage = imgUrl(file);
+    av.style.color = "";
+    av.removeAttribute("role");
+    av.removeAttribute("aria-label");
+    av.replaceChildren();
+  } else if (root.dataset.icon) {
     av.className = "avatar";   // not a theme sign (kit-img): it will not become a picture
     av.style.backgroundImage = "";
     av.removeAttribute("role");
@@ -340,7 +362,7 @@ function popover(name, kind, base) {
   pop.setAttribute("role", "dialog");
   pop.setAttribute("aria-label", t("icon"));
   if (inClean()) {
-    const list = avatars || [], cur = imgOf(name, base);
+    const list = avatars || [], chosen = imgOf(name, base);
     if (list.length) {
       pop.append(hub.el("div", "di-title", t("avatars")));
       const grid = hub.el("div", "di-grid");
@@ -350,7 +372,7 @@ function popover(name, kind, base) {
         img.style.backgroundImage = imgUrl(f);
         b.append(img);
         b.title = f.replace(/\.png$/, "");
-        b.setAttribute("aria-pressed", String(cur === f));
+        b.setAttribute("aria-pressed", String(chosen === f));
         grid.append(b);
       }
       pop.append(grid);
@@ -365,7 +387,9 @@ function popover(name, kind, base) {
       const b = sym ? button("di-opt di-sym", "", () => saveSym(name, s.n, base))
         : button("di-opt", s, () => saveEmoji(name, s));
       if (sym) { b.append(glyph(s.d)); b.style.color = colorOf(); b.title = s.n; }
-      b.setAttribute("aria-pressed", String(sym ? cur.code === s.d : cur.emoji === s));
+      // Clean: a symbol is lit only if it was picked and no avatar stands over it (the look() fallback is not a pick)
+      const on = sym ? (inClean() ? !imgOf(name, base) && symOf(name, base) === s.n : cur.code === s.d) : cur.emoji === s;
+      b.setAttribute("aria-pressed", String(on));
       grid.append(b);
     }
     pop.append(grid);
