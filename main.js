@@ -158,16 +158,16 @@ const themePic = (name) => {
   const url = (own && kit[own]) || pool[hashOf(name) % pool.length];
   return url ? `url("${url}")` : "";
 };
-// the grey avatars (files grey-*.png of the set): the default picture of a direction, so a new one never gets a colored avatar
-// the owner may want for something else; the colored ones are for picking by hand
-const greyList = () => (avatars || []).filter((f) => f.startsWith("grey-"));
-// the default picture in Clean: a direction takes a grey avatar by a hash of its name (unless the core gave it an emoji the theme
-// has a picture for), any other session keeps the theme picture. The grey one is shown in the feed too (see swap)
+// the base avatars (files base-*.png of the set, the last two rows of the picker): the default picture of a direction, so a new one
+// never takes one of the first three rows; those are for picking by hand
+const baseList = () => (avatars || []).filter((f) => f.startsWith("base-"));
+// the default picture in Clean: a direction takes a base avatar by a hash of its name (unless the core gave it an emoji the theme
+// has a picture for), any other session keeps the theme picture. The base one is shown in the feed too (see swap)
 const defaultImg = (name, kind) => {
-  const grey = greyList();
-  return kind === "direction" && grey.length && !themeKit()[ownEmoji(name)] ? grey[hashOf(name) % grey.length] : "";
+  const base = baseList();
+  return kind === "direction" && base.length && !themeKit()[ownEmoji(name)] ? base[hashOf(name) % base.length] : "";
 };
-// what the session looks like in Clean: the picked avatar, else the default grey one of a direction, else the theme picture
+// what the session looks like in Clean: the picked avatar, else the default base one of a direction, else the theme picture
 const cleanPic = (name, base, kind) => {
   const f = imgOf(name, base) || defaultImg(name, kind);
   return f ? imgUrl(f) : themePic(name);

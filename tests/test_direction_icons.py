@@ -242,19 +242,19 @@ class CleanAvatars(unittest.TestCase):
         self.assertIn('"diImg" in node.dataset', js)              # the marker is an empty string: it is checked by key (a falsy value lost the reset)
         self.assertIn('addEventListener("hub-theme"', js)
 
-    def test_sixteen_grey_avatars_come_after_the_colored_ones(self):
-        # the picker is one grid of 8 columns: 24 colored (3 rows) then 16 grey (2 rows); the grey files start with "grey-"
+    def test_sixteen_base_avatars_come_after_the_other_colored_ones(self):
+        # the picker is one grid of 8 columns: 24 colored (3 rows) then 16 base (2 rows); the base files start with "base-"
         names = self.names()
-        grey = [n for n in names if n.startswith("grey-")]
-        self.assertEqual(len(grey), 16)
-        self.assertEqual(len(names) - len(grey), 24)
-        self.assertEqual(names[24:], grey)                        # the grey rows are the last two
+        base = [n for n in names if n.startswith("base-")]
+        self.assertEqual(len(base), 16)
+        self.assertEqual(len(names) - len(base), 24)
+        self.assertEqual(names[24:], base)                        # the base rows are the last two
 
-    def test_a_direction_defaults_to_a_grey_avatar_and_a_picked_one_stays(self):
+    def test_a_direction_defaults_to_a_base_avatar_and_a_picked_one_stays(self):
         js = read("main.js")
-        self.assertIn('f.startsWith("grey-")', js)
-        self.assertRegex(js, r'kind === "direction" && grey\.length')   # only a direction, only when the set has grey ones
-        self.assertIn("grey[hashOf(name) % grey.length]", js)     # by a hash of the name, stable per session
+        self.assertIn('f.startsWith("base-")', js)
+        self.assertRegex(js, r'kind === "direction" && base\.length')   # only a direction, only when the set has base ones
+        self.assertIn("base[hashOf(name) % base.length]", js)     # by a hash of the name, stable per session
         self.assertIn("imgOf(name, base) || defaultImg(name, kind)", js)   # the picked avatar comes first
         self.assertIn('"diImg" in node.dataset', js)              # a reset still gives the theme picture back
 
