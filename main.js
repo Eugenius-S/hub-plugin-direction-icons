@@ -299,9 +299,17 @@ function button(cls, text, onClick) {
 
 // ───── session list: own sign and style ─────
 function paintRow(root) {
-  if (inClean()) return;   // Clean hides the signs of the list: nothing to change, the row stays the theme's
   const row = root.closest(".srow"), { kind, name } = root.dataset;
   let av = row?.querySelector(".nm .avatar");
+  if (inClean()) {   // Clean hides the signs of the list; a specialist or a direction gets its picture back (style.css .di-row-av)
+    if (av && (kind === "agent" || kind === "direction")) {
+      const pic = cleanPic(name, root.dataset.base, kind);
+      av.classList.add("di-row-av");
+      if (av.style.backgroundImage !== pic) av.style.backgroundImage = pic;
+    }
+    return;
+  }
+  if (av?.classList.contains("di-row-av")) { av.classList.remove("di-row-av"); av.style.backgroundImage = ""; }   // left Clean
   if (!av && kind === "hub" && root.dataset.icon) {   // the "Hub" row has no sign of its own, so we put one
     av = hub.el("span", "avatar");
     row.querySelector(".nm")?.prepend(av, document.createTextNode(" "));

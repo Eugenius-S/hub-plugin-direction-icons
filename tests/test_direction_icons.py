@@ -217,10 +217,21 @@ class CleanAvatars(unittest.TestCase):
 
     def test_the_standard_theme_stays_as_before(self):
         js, css = read("main.js"), read("style.css")
-        self.assertRegex(js, r"function paintRow\(root\) \{\n  if \(inClean\(\)\) return;")   # the Clean list hides signs: not touched
+        self.assertRegex(js, r"function paintRow\(root\) \{[^\n]*\n[^\n]*\n  let av = [^\n]*\n  if \(inClean\(\)\) \{")   # Clean branch comes first: the rest is the standard theme
+        self.assertIn('av?.classList.contains("di-row-av")', js)  # leaving Clean takes the row picture away again
         for sel in re.findall(r"^([^\n{]*\.di-(?:img|av)[^\n{]*)\{", css, re.M):
             self.assertIn("th-clean", sel, sel)                   # every rule of the avatars is Clean-only (the rest of the CSS is old)
         self.assertRegex(css, r"html\.th-clean \.di-btn \{[^}]*width")
+
+    def test_specialists_and_directions_get_their_row_picture_back_in_clean(self):
+        # 02.11: clean.css hides `.list .srow .nm > .avatar` (only the Hub row is its exception), so the list had no icons
+        js, css = read("main.js"), read("style.css")
+        self.assertRegex(js, r'kind === "agent" \|\| kind === "direction"')   # the Hub row is the theme's own, others are not touched
+        self.assertIn('av.classList.add("di-row-av")', js)
+        rule = re.search(r"html\.th-clean \.list \.srow \.nm > \.avatar\.di-row-av \{([^}]*)\}", css)
+        self.assertIsNotNone(rule)                                # one class more than the theme's own selector, no !important
+        self.assertIn("display: block", rule.group(1))
+        self.assertNotIn("!important", css[css.index("di-row-av"):])
 
     def test_the_theme_picture_is_replaced_only_where_the_theme_drew_it(self):
         js = read("main.js")

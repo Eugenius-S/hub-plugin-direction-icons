@@ -59,3 +59,7 @@ html.th-clean .di-pop .di-opt.di-sym:hover { color: var(--c-t1, var(--foreground
 html.th-clean .di-opt:hover { background: var(--c-fill, var(--muted)); }
 html.th-clean .di-opt[aria-pressed="true"] { border-color: var(--c-line-strong, var(--border)); background: var(--c-fill, var(--muted)); }
 html.th-clean .di-opt.di-sym[aria-pressed="true"] { color: var(--c-t1, var(--foreground)) !important; }
+/* Clean hides the avatar of a list row; a specialist or a direction gets its picture back (paintRow puts .di-row-av on it; the Hub row is the theme's own) */
+html.th-clean .list .srow .nm:has(> .avatar.di-row-av) { display: flex; align-items: center; gap: 8px; }
+html.th-clean .list .srow .nm > .avatar.di-row-av { display: block; flex: none; width: 24px; height: 24px; border-radius: 6px;
+  background: center / cover no-repeat; font-size: 0; color: transparent; }
