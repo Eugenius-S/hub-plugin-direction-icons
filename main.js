@@ -183,12 +183,13 @@ function settings() {
   const s = readJSON(SET);
   return {
     style: s.style === "emoji" ? "emoji" : "sym",   // outline icons of the theme unless the owner picked emoji
-    color: typeof s.color === "string" ? s.color : "",
+    // a color saved before 1.13 (no cv mark) was a pick of the old "symbol color" and is not the owner's choice for the theme list
+    color: s.cv === 2 && typeof s.color === "string" ? s.color : "",
     hop: s.hop !== false,
   };
 }
 function setSettings(patch) {
-  writeJSON(SET, { ...settings(), ...patch });
+  writeJSON(SET, { ...settings(), ...patch, cv: 2 });
   repaint();
 }
 

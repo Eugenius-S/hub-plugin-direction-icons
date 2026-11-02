@@ -268,7 +268,24 @@ class ThemeLook(unittest.TestCase):
     def test_outline_is_the_default_and_emoji_stays_a_choice(self):
         js = read("main.js")
         self.assertIn('style: s.style === "emoji" ? "emoji" : "sym"', js)
-        self.assertIn('color: typeof s.color === "string" ? s.color : ""', js)   # no random palette: empty means the theme color
+        self.assertIn('color: s.cv === 2 && typeof s.color === "string" ? s.color : ""', js)   # no random palette: empty means the theme color
+
+    def test_a_color_saved_by_an_older_version_is_the_theme_color_again(self):
+        """02.11 (d455064): the owner's old #0090ff pick turned every list icon blue once Clean showed them."""
+        node = shutil.which("node")
+        if not node:
+            self.skipTest("no node")
+        js = read("main.js")
+        src = js[js.index("function settings()"):js.index("const symbolStyle")]
+        prog = ("let store = {}; const SET = 'k'; const readJSON = () => store; const writeJSON = (k, v) => { store = v; };"
+                "const repaint = () => {};" + src + "const out = [];"
+                "store = { style: 'sym', color: '#0090ff', hop: true }; out.push(settings().color);"
+                "setSettings({ hop: false }); out.push(settings().color);"
+                "setSettings({ color: '#e5484d' }); out.push(settings().color);"
+                "console.log(JSON.stringify(out));")
+        r = subprocess.run([node, "-e", prog], capture_output=True, text=True, encoding="utf-8")
+        self.assertEqual(r.returncode, 0, r.stderr)
+        self.assertEqual(json.loads(r.stdout), ["", "", "#e5484d"])
 
     def test_the_color_comes_from_the_theme_tokens(self):
         css = read("style.css")
@@ -304,7 +321,7 @@ class ThemeLook(unittest.TestCase):
         man = json.loads(read("hub-plugin.json"))
         self.assertLessEqual(len(man["description"]), 300)
         self.assertLessEqual(len(man["i18n"]["ru"]["description"]), 300)
-        self.assertEqual(man["version"], "1.13.0")
+        self.assertEqual(man["version"], "1.13.1")
 
 
 class Languages(unittest.TestCase):
