@@ -396,7 +396,7 @@ class ThemeLook(unittest.TestCase):
         man = json.loads(read("hub-plugin.json"))
         self.assertLessEqual(len(man["description"]), 300)
         self.assertLessEqual(len(man["i18n"]["ru"]["description"]), 300)
-        self.assertEqual(man["version"], "1.14.0")
+        self.assertEqual(man["version"], "1.14.1")
 
 
 class Languages(unittest.TestCase):
@@ -472,7 +472,7 @@ class PickerScroll(unittest.TestCase):
         srv = http.server.ThreadingHTTPServer(("127.0.0.1", 0), functools.partial(Page, directory=ROOT))
         threading.Thread(target=srv.serve_forever, daemon=True).start()
         try:
-            with tempfile.TemporaryDirectory() as prof:
+            with tempfile.TemporaryDirectory(ignore_cleanup_errors=True) as prof:   # Chrome may still write as it dies
                 proc = subprocess.Popen([chrome, "--no-sandbox", f"--user-data-dir={prof}", "--window-size=800,700",
                                          f"http://127.0.0.1:{srv.server_address[1]}/tests/page/scroll.html"],
                                         stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
