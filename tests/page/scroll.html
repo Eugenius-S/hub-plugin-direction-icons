@@ -1,0 +1,38 @@
+<!doctype html>
+<meta charset="utf-8">
+<link rel="stylesheet" href="/style.css">
+<style>:root { --card: #fff; --border: #ccc; --space-2: 8px; --space-3: 12px; --radius: 4px; --radius-lg: 8px; --text-xs: 12px; }
+body { margin: 0; height: 600px; } .head { position: relative; height: 40px; }</style>
+<div class="head" id="head"></div>
+<script type="module">
+// the hub's behavior the plugin lives with: the slot root survives between snapshots, the header is rebuilt (the root is detached and put back)
+const el = (tag, cls, text) => { const n = document.createElement(tag); if (cls) n.className = cls; if (text != null) n.textContent = text; return n; };
+const slots = {};
+const snap = { sessions: [{ name: "writer", role: "agent", icon: "✍" }], directions: [] };
+const hub = {
+  lang: "en", api: "1.14", el, snapshot: () => snap, post: async () => ({}), redraw() {},
+  url: (f) => "/" + f, addStyle() {}, addOptions() {}, addSettings() {},
+  addSlot(slot, item) { slots[slot] = item; },
+};
+const frame = () => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
+const out = {};
+try {
+  (await import("/main.js")).default(hub);
+  await new Promise((r) => setTimeout(r, 500));   // emoji.json, symbols.json and avatars.json arrive
+  const head = document.getElementById("head"), root = el("div", "slot slot-session-header");
+  const draw = () => { slots["session.header"].render(root, snap, { session: snap.sessions[0] }); head.replaceChildren(el("h2", null, "writer"), root); };
+  draw();
+  await frame();
+  root.querySelector(".di-btn").click();
+  const pop = () => root.querySelector(".di-pop");
+  out.opened = !!pop();
+  pop().scrollTop = 300;
+  await frame();
+  out.before = pop().scrollTop;
+  out.scrollable = pop().scrollHeight > pop().clientHeight;
+  for (let i = 0; i < 3; i++) { draw(); await frame(); }   // snapshots keep arriving while the picker is open
+  out.after = pop() ? pop().scrollTop : -1;
+  out.stillOpen = !!pop();
+} catch (e) { out.error = String(e && e.stack || e); }
+await fetch("/result", { method: "POST", body: JSON.stringify(out) });
+</script>

@@ -430,5 +430,73 @@ class Languages(unittest.TestCase):
         self.assertEqual(titles - set(ru), set())                  # every group title has a Russian name
 
 
+class PickerScroll(unittest.TestCase):
+    """The hub rebuilds the header on every snapshot: the slot root is detached and put back, and a detached scroller loses
+    its position. The open picker must keep where the owner scrolled it. A real page in headless Chrome (HUB_TEST_CHROME,
+    else the usual places of chrome-headless-shell); none: skipped."""
+
+    @staticmethod
+    def chrome():
+        import glob
+        env = os.environ.get("HUB_TEST_CHROME")
+        if env and os.path.isfile(env):
+            return env
+        for pat in ("~/.config/hub-core/chrome-headless-shell/**/chrome-headless-shell",
+                    "~/.cache/puppeteer/chrome-headless-shell/*/*/chrome-headless-shell",
+                    "~/Library/Caches/ms-playwright/chromium_headless_shell-*/*/chrome-headless-shell",
+                    "~/.cache/ms-playwright/chromium_headless_shell-*/*/headless_shell"):
+            found = sorted(glob.glob(os.path.expanduser(pat), recursive=True))
+            if found:
+                return found[-1]
+        return None
+
+    def run_page(self):
+        import functools
+        import http.server
+        import tempfile
+        import threading
+        import time
+        chrome = self.chrome()
+        if not chrome:
+            raise unittest.SkipTest("no chrome-headless-shell")
+        got = []
+
+        class Page(http.server.SimpleHTTPRequestHandler):   # the page posts its result here
+            def log_message(self, *a):
+                pass
+
+            def do_POST(self):
+                got.append(self.rfile.read(int(self.headers.get("Content-Length") or 0)).decode("utf-8"))
+                self.send_response(204)
+                self.end_headers()
+        srv = http.server.ThreadingHTTPServer(("127.0.0.1", 0), functools.partial(Page, directory=ROOT))
+        threading.Thread(target=srv.serve_forever, daemon=True).start()
+        try:
+            with tempfile.TemporaryDirectory() as prof:
+                proc = subprocess.Popen([chrome, "--no-sandbox", f"--user-data-dir={prof}", "--window-size=800,700",
+                                         f"http://127.0.0.1:{srv.server_address[1]}/tests/page/scroll.html"],
+                                        stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+                try:
+                    end = time.time() + 40
+                    while not got and time.time() < end and proc.poll() is None:
+                        time.sleep(0.1)
+                finally:
+                    proc.kill()
+                    proc.wait()
+        finally:
+            srv.shutdown()
+            srv.server_close()
+        self.assertTrue(got, "the page did not report")
+        return json.loads(got[0])
+
+    def test_open_picker_keeps_its_scroll_when_the_header_is_rebuilt(self):
+        out = self.run_page()
+        self.assertNotIn("error", out)
+        self.assertTrue(out["opened"] and out["scrollable"], out)
+        self.assertGreater(out["before"], 100, out)               # the harness did scroll the picker
+        self.assertTrue(out["stillOpen"], out)
+        self.assertEqual(out["after"], out["before"], out)
+
+
 if __name__ == "__main__":
     unittest.main()

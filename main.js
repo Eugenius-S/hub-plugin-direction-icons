@@ -121,6 +121,9 @@ const BY_EMOJI = {
   "🏆": "trophy", "💎": "crown", "❤": "heart", "💜": "heart", "💙": "heart", "💚": "heart",
 };
 let hub = null, asked = new Set(), groups = null, symbols = null, avatars = null, openFor = null;
+// the open picker's scroll: the hub rebuilds the header on every snapshot (the root is detached and put back), and a detached
+// scroller loses its position, so it is taken at the first render after a rebuild and put back before paint
+let popTop = 0, popStale = false;
 
 const readJSON = (key) => { try { const v = JSON.parse(localStorage.getItem(key) || "{}"); return v && typeof v === "object" ? v : {}; } catch { return {}; } };
 const writeJSON = (key, v) => { try { localStorage.setItem(key, JSON.stringify(v)); } catch { /* no storage */ } };
@@ -421,6 +424,9 @@ function renderHead(root, snap, { session }) {
   if (!editable(kind)) { root.replaceChildren(); root.hidden = true; delete root.dataset.name; return; }
   root.hidden = false;
   const name = session.name;
+  const open = root.querySelector(".di-pop");
+  if (open?.isConnected && !popStale) popTop = open.scrollTop;   // still in the page: the real position; after the rebuild it is 0
+  popStale = true;
   let btn = root.querySelector(".di-btn");
   if (!btn) {
     btn = button("di-btn", "", (e) => {
@@ -439,13 +445,16 @@ function renderHead(root, snap, { session }) {
   requestAnimationFrame(() => {   // on the left, before the title, not at the right edge
     const title = root.parentElement?.querySelector(":scope > h2");
     if (title && title.previousElementSibling !== root) title.before(root);
+    const pop = root.querySelector(".di-pop");
+    if (pop && pop.scrollTop !== popTop) pop.scrollTop = popTop;
+    popStale = false;
   });
 }
 
 function sync(root) {
   const name = root.dataset.name, pop = root.querySelector(".di-pop");
   root.querySelector(".di-btn")?.setAttribute("aria-expanded", String(openFor === name));
-  if (openFor === name && !pop) root.append(popover(name, root.dataset.kind, root.dataset.base));
+  if (openFor === name && !pop) { popTop = 0; root.append(popover(name, root.dataset.kind, root.dataset.base)); }
   else if (openFor !== name && pop) pop.remove();
 }
 
