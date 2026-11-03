@@ -121,8 +121,9 @@ const BY_EMOJI = {
   "🏆": "trophy", "💎": "crown", "❤": "heart", "💜": "heart", "💙": "heart", "💚": "heart",
 };
 let hub = null, asked = new Set(), groups = null, symbols = null, avatars = null, openFor = null;
-// the open picker's scroll: the hub rebuilds the header on every snapshot (the root is detached and put back), and a detached
-// scroller loses its position, so it is taken at the first render after a rebuild and put back before paint
+// the open picker's scroll: the hub rebuilds the header on every snapshot (it drops the old header, root included, before it
+// calls render, then puts the root into the new one), and a detached scroller loses its position. So the position is kept from
+// the scroll events and put back before paint; events between a render and that paint are the reset, not the owner
 let popTop = 0, popStale = false;
 
 const readJSON = (key) => { try { const v = JSON.parse(localStorage.getItem(key) || "{}"); return v && typeof v === "object" ? v : {}; } catch { return {}; } };
@@ -370,6 +371,7 @@ function renderRow(root, snap, { session }) {
 function popover(name, kind, base) {
   const sym = symbolStyle(), cur = look(name, kind, base);
   const pop = hub.el("div", "di-pop");
+  pop.addEventListener("scroll", () => { if (!popStale && pop.isConnected) popTop = pop.scrollTop; });
   pop.setAttribute("role", "dialog");
   pop.setAttribute("aria-label", t("icon"));
   if (inClean()) {
@@ -424,8 +426,6 @@ function renderHead(root, snap, { session }) {
   if (!editable(kind)) { root.replaceChildren(); root.hidden = true; delete root.dataset.name; return; }
   root.hidden = false;
   const name = session.name;
-  const open = root.querySelector(".di-pop");
-  if (open?.isConnected && !popStale) popTop = open.scrollTop;   // still in the page: the real position; after the rebuild it is 0
   popStale = true;
   let btn = root.querySelector(".di-btn");
   if (!btn) {

@@ -396,7 +396,7 @@ class ThemeLook(unittest.TestCase):
         man = json.loads(read("hub-plugin.json"))
         self.assertLessEqual(len(man["description"]), 300)
         self.assertLessEqual(len(man["i18n"]["ru"]["description"]), 300)
-        self.assertEqual(man["version"], "1.14.1")
+        self.assertEqual(man["version"], "1.14.2")
 
 
 class Languages(unittest.TestCase):

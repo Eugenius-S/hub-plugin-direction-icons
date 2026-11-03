@@ -20,7 +20,8 @@ try {
   (await import("/main.js")).default(hub);
   await new Promise((r) => setTimeout(r, 500));   // emoji.json, symbols.json and avatars.json arrive
   const head = document.getElementById("head"), root = el("div", "slot slot-session-header");
-  const draw = () => { slots["session.header"].render(root, snap, { session: snap.sessions[0] }); head.replaceChildren(el("h2", null, "writer"), root); };
+  // the order of the page: the old header goes first (the root with it), then render, then the root goes into the new header
+  const draw = () => { head.replaceChildren(); slots["session.header"].render(root, snap, { session: snap.sessions[0] }); head.append(el("h2", null, "writer"), root); };
   draw();
   await frame();
   root.querySelector(".di-btn").click();
